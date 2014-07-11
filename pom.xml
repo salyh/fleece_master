@@ -96,6 +96,8 @@
             <exclude>*.ipr</exclude>
             <exclude>**/META-INF/services/javax.json.spi.JsonProvider</exclude>
             <exclude>**/*.json</exclude>
+            <exclude>**/*.yml</exclude>
+            <exclude>**/bench/*.txt</exclude>
           </excludes>
         </configuration>
         <executions>
