@@ -215,6 +215,11 @@ public abstract class JsonBaseStreamParser implements JsonChars,
 
     @Override
     public final Event next() {
+        
+        //fast fail
+        if(!hasNext()) {
+            throw new NoSuchElementException();
+        }
 
         int dosCount = 0;
         lastEvent = event;

@@ -689,6 +689,20 @@ public class JsonParserTest {
     }
     
     @Test(expected = JsonParsingException.class)
+    public void literalFailChecksTrue() {
+        // using a reader as wrapper of parser
+  
+        Json.createReader(new ByteArrayInputStream("{\"z\":truet}".getBytes())).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void literalFailChecksNull() {
+        // using a reader as wrapper of parser
+  
+        Json.createReader(new ByteArrayInputStream("{\"z\":nulll}".getBytes())).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
     public void zeroByteInput() {
         // using a reader as wrapper of parser
   
@@ -700,6 +714,13 @@ public class JsonParserTest {
         // using a reader as wrapper of parser
   
         assertEquals(0L, Json.createReader(new ByteArrayInputStream("[0]".getBytes())).readArray().getJsonNumber(0).longValue());
+    }
+    
+    @Test
+    public void shortestNonEmtyJsonFileWithWhiteSpaceChars() {
+        // using a reader as wrapper of parser
+  
+        assertEquals(0L, Json.createReader(new ByteArrayInputStream("  \n\n   [   0  ]  \n\n".getBytes())).readArray().getJsonNumber(0).longValue());
     }
     
     
