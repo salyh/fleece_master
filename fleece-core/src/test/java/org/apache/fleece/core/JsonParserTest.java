@@ -496,6 +496,20 @@ public class JsonParserTest {
         Json.createReader(new ByteArrayInputStream("{\"z\":\"b\"\"j\":\"d\"}".getBytes())).read();
     }
     
+    @Test(expected = JsonParsingException.class)
+    public void zeroByteInput() {
+        // using a reader as wrapper of parser
+  
+        Json.createReader(new ByteArrayInputStream(new byte[]{})).read();
+    }
+    
+    @Test
+    public void shortestNonEmtyJsonFile() {
+        // using a reader as wrapper of parser
+  
+        assertEquals(0L, Json.createReader(new ByteArrayInputStream("[0]".getBytes())).readArray().getJsonNumber(0).longValue());
+    }
+    
     
     @Test(expected = JsonParsingException.class)
     public void fail1() {
