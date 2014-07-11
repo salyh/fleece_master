@@ -305,6 +305,198 @@ public class JsonParserTest {
         parser.close();
     }
 
+    
+    @Test
+    public void numbers() {
+        final JsonParser parser = Json.createParser(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/numbers.json"));
+        assertNotNull(parser);
+        parser.next();
+        parser.next();
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertTrue(parser.isIntegralNumber());
+            assertEquals(0, parser.getInt());
+            assertEquals(0, parser.getLong());
+            assertEquals(new BigDecimal(0), parser.getBigDecimal());
+        }
+        parser.next();
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertTrue(parser.isIntegralNumber());
+            assertEquals(0, parser.getInt());
+            assertEquals(0, parser.getLong());
+            assertEquals(new BigDecimal(0), parser.getBigDecimal());
+        }
+        parser.next();
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertTrue(parser.isIntegralNumber());
+            assertEquals(1, parser.getInt());
+            assertEquals(1, parser.getLong());
+            assertEquals(new BigDecimal(1), parser.getBigDecimal());
+        }
+        parser.next();
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertTrue(parser.isIntegralNumber());
+            assertEquals(-1, parser.getInt());
+            assertEquals(-1L, parser.getLong());
+            assertEquals(new BigDecimal(-1), parser.getBigDecimal());
+        }
+
+        parser.next();
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertTrue(parser.isIntegralNumber());
+            assertEquals(9, parser.getInt());
+            assertEquals(9L, parser.getLong());
+            assertEquals(new BigDecimal(9), parser.getBigDecimal());
+        }
+        parser.next();
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertTrue(parser.isIntegralNumber());
+            assertEquals(-9, parser.getInt());
+            assertEquals(-9, parser.getLong());
+            assertEquals(new BigDecimal(-9), parser.getBigDecimal());
+        }
+        parser.next();
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertTrue(parser.isIntegralNumber());
+            assertEquals(10, parser.getInt());
+            assertEquals(10, parser.getLong());
+            assertEquals(new BigDecimal(10), parser.getBigDecimal());
+        }
+        parser.next();
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertTrue(parser.isIntegralNumber());
+            assertEquals(-10, parser.getInt());
+            assertEquals(-10, parser.getLong());
+            assertEquals(new BigDecimal(-10), parser.getBigDecimal());
+        }
+        parser.next();
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertTrue(parser.isIntegralNumber());
+            assertEquals(100, parser.getInt());
+            assertEquals(100, parser.getLong());
+            assertEquals(new BigDecimal(100), parser.getBigDecimal());
+        }
+        parser.next();
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertTrue(parser.isIntegralNumber());
+            assertEquals(-100, parser.getInt());
+            assertEquals(-100, parser.getLong());
+            assertEquals(new BigDecimal(-100), parser.getBigDecimal());
+        }
+        parser.next();
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertTrue(parser.isIntegralNumber());
+            assertEquals(456, parser.getInt());
+            assertEquals(456, parser.getLong());
+            assertEquals(new BigDecimal(456), parser.getBigDecimal());
+        }
+        parser.next();
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertTrue(parser.isIntegralNumber());
+            assertEquals(-456, parser.getInt());
+            assertEquals(-456, parser.getLong());
+            assertEquals(new BigDecimal(-456), parser.getBigDecimal());
+        }
+        parser.next();
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertTrue(!parser.isIntegralNumber());
+            assertEquals(123, parser.getInt());
+            assertEquals(123, parser.getLong());
+            assertEquals(new BigDecimal("123.12345"), parser.getBigDecimal());
+        }
+        parser.next();
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertTrue(!parser.isIntegralNumber());
+            assertEquals(-123, parser.getInt());
+            assertEquals(-123, parser.getLong());
+            assertEquals(new BigDecimal("-123.12345"), parser.getBigDecimal());
+        }
+        parser.next();
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertTrue(parser.isIntegralNumber());
+            //assertEquals(Integer.MAX_VALUE, parser.getInt());
+            //assertEquals(Long.MAX_VALUE, parser.getLong());
+            assertEquals(new BigDecimal("999999999999999999999999999999"), parser.getBigDecimal());
+        }
+        parser.next();
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertTrue(parser.isIntegralNumber());
+            //assertEquals(Integer.MIN_VALUE, parser.getInt());
+            //assertEquals(Long.MIN_VALUE, parser.getLong());
+            assertEquals(new BigDecimal("-999999999999999999999999999999"), parser.getBigDecimal());
+        }
+        parser.next();
+        
+        {
+            assertFalse(parser.hasNext());
+        }
+        parser.close();
+    }
+    
+    
     @Test
     public void bigdecimal() {
         final JsonParser parser = Json.createParser(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/bigdecimal.json"));
