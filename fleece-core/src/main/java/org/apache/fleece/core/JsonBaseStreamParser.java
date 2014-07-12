@@ -103,6 +103,11 @@ public abstract class JsonBaseStreamParser implements JsonChars,
     }
 
     private boolean ifConstructingStringValueAdd(char c) throws IOException {
+        
+        if(!constructingStringValue) {
+            return false;
+        }
+        
         if (escaped) {
 
             if (c == 'u') {
@@ -129,17 +134,10 @@ public abstract class JsonBaseStreamParser implements JsonChars,
 
             escaped = false;
         }
+        
+        appendValue(c);
 
-        return ifConstructingStringValueAdd(c, false);
-    }
-
-    private boolean ifConstructingStringValueAdd(final char c,
-            final boolean escape) {
-        if (constructingStringValue) {
-
-            appendValue(escape ? Strings.asEscapedChar(c) : c);
-        }
-        return constructingStringValue;
+        return true;
     }
 
     protected abstract char readNextChar() throws IOException;
@@ -742,7 +740,7 @@ public abstract class JsonBaseStreamParser implements JsonChars,
 
     }
 
-    private boolean isNumber(final char c) {
+    private static boolean isNumber(final char c) {
         return isAsciiDigit(c) || c == DOT || c == MINUS || c == PLUS
                 || c == EXP_LOWERCASE || c == EXP_UPPERCASE;
     }
