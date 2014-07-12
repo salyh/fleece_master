@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +41,9 @@ import javax.json.JsonStructure;
 import org.junit.Test;
 
 public class JsonReaderImplTest {
+    
+    protected static Charset utf8Charset = Charset.forName("UTF8");
+    protected static Charset asciiCharset = Charset.forName("ASCII");
 
     @SuppressWarnings("unchecked")
     protected Map<String, ?> getFactoryConfig() {
@@ -50,7 +53,7 @@ public class JsonReaderImplTest {
     @Test
     public void simple() {
         final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
-                Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple.json"), StandardCharsets.UTF_8);
+                Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple.json"), utf8Charset);
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
@@ -69,7 +72,7 @@ public class JsonReaderImplTest {
     @Test
     public void unicode() {
         final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
-                Thread.currentThread().getContextClassLoader().getResourceAsStream("json/unicode.json"), StandardCharsets.UTF_8);
+                Thread.currentThread().getContextClassLoader().getResourceAsStream("json/unicode.json"), utf8Charset);
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
@@ -90,7 +93,7 @@ public class JsonReaderImplTest {
     @Test
     public void unicodeWithIoReader() {
         final Reader ioReader = new InputStreamReader(Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream("json/unicode.json"), StandardCharsets.UTF_8);
+                .getResourceAsStream("json/unicode.json"), utf8Charset);
         final JsonReader reader = Json.createReader(ioReader);
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
@@ -112,7 +115,7 @@ public class JsonReaderImplTest {
     @Test
     public void special() {
         final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
-                Thread.currentThread().getContextClassLoader().getResourceAsStream("json/special.json"), StandardCharsets.UTF_8);
+                Thread.currentThread().getContextClassLoader().getResourceAsStream("json/special.json"), utf8Charset);
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
@@ -129,7 +132,7 @@ public class JsonReaderImplTest {
     @Test
     public void specialWithIoReader() {
         final Reader ioReader = new InputStreamReader(Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream("json/special.json"), StandardCharsets.UTF_8);
+                .getResourceAsStream("json/special.json"), utf8Charset);
         final JsonReader reader = Json.createReader(ioReader);
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
@@ -148,7 +151,7 @@ public class JsonReaderImplTest {
     public void specialWithStringAsByteArrayInputStream() {
         final String s = "{\"নa\":\"hallo\u20acö\uffff \u08a5 থ?ß§$%&´'`*+#\udbff\udfff\"}";
         final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
-                new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
+                new ByteArrayInputStream(s.getBytes(utf8Charset)), utf8Charset);
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
@@ -161,7 +164,7 @@ public class JsonReaderImplTest {
     public void specialWithStringReader() {
         final String s = "{\"ন:4::,[{\u08a5\":\"থii:üäöÖ.,;.-<>!§$%&()=?ß´'`*+#\ua5a5\"}";
         final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
-                new InputStreamReader(new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8));
+                new InputStreamReader(new ByteArrayInputStream(s.getBytes(utf8Charset)), utf8Charset));
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
@@ -180,8 +183,8 @@ public class JsonReaderImplTest {
         assertTrue(Character.isLowSurrogate(charPair[1]));
         assertTrue(Character.isSurrogatePair(charPair[0], charPair[1]));
         final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
-                (new ByteArrayInputStream(("{\"\":\"Ö" + charPair[0] + charPair[1] + "\"}").getBytes(StandardCharsets.UTF_8))),
-                StandardCharsets.UTF_8);
+                (new ByteArrayInputStream(("{\"\":\"Ö" + charPair[0] + charPair[1] + "\"}").getBytes(utf8Charset))),
+                utf8Charset);
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
@@ -197,9 +200,10 @@ public class JsonReaderImplTest {
         final char[] charPair = Character.toChars("\uffff".codePointAt(0));
         assertNotNull(charPair);
         assertEquals(1, charPair.length);
-        assertTrue(!Character.isSurrogate(charPair[0]));
+        assertTrue(!Character.isLowSurrogate(charPair[0]));
+        assertTrue(!Character.isHighSurrogate(charPair[0]));
         final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
-                new ByteArrayInputStream(("{\"\":\"\uffff\"}").getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
+                new ByteArrayInputStream(("{\"\":\"\uffff\"}").getBytes(utf8Charset)), utf8Charset);
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
@@ -211,7 +215,7 @@ public class JsonReaderImplTest {
     @Test
     public void unicode2Bytes() {
         final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
-                new ByteArrayInputStream(("{\"\":\"Ö\u00d6\"}").getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
+                new ByteArrayInputStream(("{\"\":\"Ö\u00d6\"}").getBytes(utf8Charset)), utf8Charset);
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
@@ -224,8 +228,8 @@ public class JsonReaderImplTest {
     public void unicodeFailAscii() {
         final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
                 new ByteArrayInputStream(
-                        "{\"ন:4::,[{\udbff\udfff\":\"থii:üäöÖ.,;.-<>!§$%&()=?ß´'`*+#\udbff\udfff\"}".getBytes(StandardCharsets.US_ASCII)),
-                StandardCharsets.UTF_8);
+                        "{\"ন:4::,[{\udbff\udfff\":\"থii:üäöÖ.,;.-<>!§$%&()=?ß´'`*+#\udbff\udfff\"}".getBytes(asciiCharset)),
+                utf8Charset);
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
@@ -237,7 +241,7 @@ public class JsonReaderImplTest {
     @Test
     public void parseHuge1MbJsonFile() {
         final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
-                Thread.currentThread().getContextClassLoader().getResourceAsStream("bench/huge_1mb.json"), StandardCharsets.UTF_8);
+                Thread.currentThread().getContextClassLoader().getResourceAsStream("bench/huge_1mb.json"), utf8Charset);
         assertNotNull(reader);
         final JsonStructure object = reader.read();
         assertNotNull(object);
@@ -247,7 +251,7 @@ public class JsonReaderImplTest {
     @Test
     public void parseBig600KbJsonFile() {
         final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
-                Thread.currentThread().getContextClassLoader().getResourceAsStream("bench/big_600kb.json"), StandardCharsets.UTF_8);
+                Thread.currentThread().getContextClassLoader().getResourceAsStream("bench/big_600kb.json"), utf8Charset);
         assertNotNull(reader);
         final JsonStructure object = reader.read();
         assertNotNull(object);
@@ -257,7 +261,7 @@ public class JsonReaderImplTest {
     @Test
     public void parseLarge130KbJsonFile() {
         final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
-                Thread.currentThread().getContextClassLoader().getResourceAsStream("bench/large_130kb.json"), StandardCharsets.UTF_8);
+                Thread.currentThread().getContextClassLoader().getResourceAsStream("bench/large_130kb.json"), utf8Charset);
         assertNotNull(reader);
         final JsonStructure object = reader.read();
         assertNotNull(object);
@@ -267,7 +271,7 @@ public class JsonReaderImplTest {
     @Test
     public void parseMedium11KbJsonFile() {
         final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
-                Thread.currentThread().getContextClassLoader().getResourceAsStream("bench/medium_11kb.json"), StandardCharsets.UTF_8);
+                Thread.currentThread().getContextClassLoader().getResourceAsStream("bench/medium_11kb.json"), utf8Charset);
         assertNotNull(reader);
         final JsonStructure object = reader.read();
         assertNotNull(object);
@@ -277,7 +281,7 @@ public class JsonReaderImplTest {
     @Test
     public void parseSmall3KbJsonFile() {
         final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
-                Thread.currentThread().getContextClassLoader().getResourceAsStream("bench/small_3kb.json"), StandardCharsets.UTF_8);
+                Thread.currentThread().getContextClassLoader().getResourceAsStream("bench/small_3kb.json"), utf8Charset);
         assertNotNull(reader);
         final JsonStructure object = reader.read();
         assertNotNull(object);
@@ -287,7 +291,7 @@ public class JsonReaderImplTest {
     @Test
     public void parseTiny50BJsonFile() {
         final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
-                Thread.currentThread().getContextClassLoader().getResourceAsStream("bench/tiny_50b.json"), StandardCharsets.UTF_8);
+                Thread.currentThread().getContextClassLoader().getResourceAsStream("bench/tiny_50b.json"), utf8Charset);
         assertNotNull(reader);
         final JsonStructure object = reader.read();
         assertNotNull(object);
@@ -300,7 +304,7 @@ public class JsonReaderImplTest {
             {
                 put("org.apache.fleece.default-char-buffer", "8");
             }
-        }).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple.json"), StandardCharsets.UTF_8);
+        }).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple.json"), utf8Charset);
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
@@ -322,7 +326,7 @@ public class JsonReaderImplTest {
             {
                 put("org.apache.fleece.default-char-buffer", "9");
             }
-        }).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple.json"), StandardCharsets.UTF_8);
+        }).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple.json"), utf8Charset);
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
@@ -344,7 +348,7 @@ public class JsonReaderImplTest {
             {
                 put("org.apache.fleece.default-char-buffer", "0");
             }
-        }).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/empty.json"), StandardCharsets.UTF_8);
+        }).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/empty.json"), utf8Charset);
         assertNotNull(reader);
         reader.readObject();
         reader.close();
@@ -356,7 +360,7 @@ public class JsonReaderImplTest {
             {
                 put("org.apache.fleece.default-char-buffer", "1");
             }
-        }).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/empty.json"), StandardCharsets.UTF_8);
+        }).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/empty.json"), utf8Charset);
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
@@ -370,7 +374,7 @@ public class JsonReaderImplTest {
             {
                 put("org.apache.fleece.default-char-buffer", "1");
             }
-        }).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/emptyarray.json"), StandardCharsets.UTF_8);
+        }).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/emptyarray.json"), utf8Charset);
         assertNotNull(reader);
         final JsonArray array = reader.readArray();
         assertNotNull(array);
@@ -390,7 +394,7 @@ public class JsonReaderImplTest {
                     put("org.apache.fleece.default-char-buffer", value);
                 }
             }).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/stringescape.json"),
-                    StandardCharsets.UTF_8);
+                    utf8Charset);
             assertNotNull(reader);
             final JsonObject object = reader.readObject();
             assertNotNull(object);
