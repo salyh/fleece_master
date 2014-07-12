@@ -78,13 +78,12 @@ public class JsonGeneratorImplTest {
         assertEquals("[null,\"\"]", new String(baos.toByteArray()));
     }
     
-    //wait for FLEECE-7
-    /*@Test
+    @Test
     public void nullLiteralArray() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Json.createGenerator(baos).writeStartArray().writeNull().write(JsonValue.NULL).writeEnd().close();
         assertEquals("[null,null]", new String(baos.toByteArray()));
-    }*/
+    }
     
     @Test
     public void boolLiteralArray() {
