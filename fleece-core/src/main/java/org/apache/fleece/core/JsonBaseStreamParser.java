@@ -21,6 +21,7 @@ package org.apache.fleece.core;
 import javax.json.JsonException;
 import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParsingException;
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
@@ -775,6 +776,10 @@ public abstract class JsonBaseStreamParser implements JsonChars,
             return currentIntegralNumber.intValue();
         }
 
+        if(isCurrentNumberIntegral) {
+            return (int) parseLongFromChars(currentValue, 0, valueLength);
+        }
+        
         return getBigDecimal().intValue();
     }
 
@@ -788,6 +793,10 @@ public abstract class JsonBaseStreamParser implements JsonChars,
             return currentIntegralNumber.intValue();
         } // int is ok, its only from 0-9
 
+        if(isCurrentNumberIntegral) {
+            return parseLongFromChars(currentValue, 0, valueLength);
+        }
+        
         return getBigDecimal().longValue();
     }
 
@@ -823,6 +832,31 @@ public abstract class JsonBaseStreamParser implements JsonChars,
     @Override
     public String getEscapedString() {
         return Strings.escape(getValue());
+    }
+    
+    private static long parseLongFromChars(char[] chars, int start, int end) {
+
+        if (chars == null 
+                || chars.length == 0 
+                || start < 0 
+                || end <= start 
+                || end > chars.length - 1 
+                || start > chars.length - 1) {
+            throw new IllegalArgumentException();
+        }
+
+        long retVal = 0;
+        boolean negative = chars[start] == MINUS;
+        for (int i = negative ? start + 1 : start; i < end; i++) {
+
+            //int this context we know its an integral number, so skip this due to perf reasons
+            /*if (chars[i] < ZERO || chars[i] > NINE) {
+                throw new IllegalArgumentException("Not a integral number");
+            }*/
+            retVal = retVal * 10 + (chars[i] - ZERO);
+        }
+
+        return negative ? -retVal : retVal;
     }
 
 }
