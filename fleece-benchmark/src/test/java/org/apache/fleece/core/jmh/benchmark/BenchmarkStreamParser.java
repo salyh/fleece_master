@@ -102,133 +102,133 @@ public class BenchmarkStreamParser {
     //-- parse bytes
     /*
         @Benchmark
-        public void parse_only_1k_bytes(final Blackhole bh) throws Exception {
+        public void parseOnly1kBytes(final Blackhole bh) throws Exception {
             bh.consume(parse(new ByteArrayInputStream(Buffers.B_1K), bh));
         }
 
         @Benchmark
-        public void parse_only_3k_bytes(final Blackhole bh) throws Exception {
+        public void parseOnly3kBytes(final Blackhole bh) throws Exception {
             bh.consume(parse(new ByteArrayInputStream(Buffers.B_3K), bh));
         }
 
         @Benchmark
-        public void parse_only_10k_bytes(final Blackhole bh) throws Exception {
+        public void parseOnly10kBytes(final Blackhole bh) throws Exception {
             bh.consume(parse(new ByteArrayInputStream(Buffers.B_10K), bh));
         }
 
         @Benchmark
-        public void parse_only_100k_bytes(final Blackhole bh) throws Exception {
+        public void parseOnly100kBytes(final Blackhole bh) throws Exception {
             bh.consume(parse(new ByteArrayInputStream(Buffers.B_100K), bh));
         }
 
         @Benchmark
-        public void parse_only_1000k_bytes(final Blackhole bh) throws Exception {
+        public void parseOnly1000kBytes(final Blackhole bh) throws Exception {
             bh.consume(parse(new ByteArrayInputStream(Buffers.B_1000K), bh));
         }
 
         @Benchmark
-        public void parse_only_100000k_bytes(final Blackhole bh) throws Exception {
+        public void parseOnly100000kBytes(final Blackhole bh) throws Exception {
             bh.consume(parse(new ByteArrayInputStream(Buffers.B_100000K), bh));
         }
     */
     //-- parse chars
 
     @Benchmark
-    public void parse_only_1k_chars(final Blackhole bh) throws Exception {
+    public void parseOnly1kChars(final Blackhole bh) throws Exception {
         bh.consume(parse(new CharArrayReader(Buffers.C_1K), bh));
     }
 
     @Benchmark
-    public void parse_only_3k_chars(final Blackhole bh) throws Exception {
+    public void parseOnly3kChars(final Blackhole bh) throws Exception {
         bh.consume(parse(new CharArrayReader(Buffers.C_3K), bh));
     }
 
     @Benchmark
-    public void parse_only_10k_chars(final Blackhole bh) throws Exception {
+    public void parseOnly10kChars(final Blackhole bh) throws Exception {
         bh.consume(parse(new CharArrayReader(Buffers.C_10K), bh));
     }
 
     @Benchmark
-    public void parse_only_100k_chars(final Blackhole bh) throws Exception {
+    public void parseOnly100kChars(final Blackhole bh) throws Exception {
         bh.consume(parse(new CharArrayReader(Buffers.C_100K), bh));
     }
 
     @Benchmark
-    public void parse_only_1000k_chars(final Blackhole bh) throws Exception {
+    public void parseOnly1000kChars(final Blackhole bh) throws Exception {
         bh.consume(parse(new CharArrayReader(Buffers.C_1000K), bh));
     }
 
     @Benchmark
-    public void parse_only_100000k_chars(final Blackhole bh) throws Exception {
+    public void parseOnly100000kChars(final Blackhole bh) throws Exception {
         bh.consume(parse(new CharArrayReader(Buffers.C_100000K), bh));
     }
 
     //-- read bytes to structure
     /*
         @Benchmark
-        public void read_1k_bytes(final Blackhole bh) throws Exception {
+        public void read1kBytes(final Blackhole bh) throws Exception {
             bh.consume(read(new ByteArrayInputStream(Buffers.B_1K), bh));
         }
 
         @Benchmark
-        public void read_3k_bytes(final Blackhole bh) throws Exception {
+        public void read_3kBytes(final Blackhole bh) throws Exception {
             bh.consume(read(new ByteArrayInputStream(Buffers.B_3K), bh));
         }
 
         @Benchmark
-        public void read_10k_bytes(final Blackhole bh) throws Exception {
+        public void read10kBytes(final Blackhole bh) throws Exception {
             bh.consume(read(new ByteArrayInputStream(Buffers.B_10K), bh));
         }
 
         @Benchmark
-        public void read_100k_bytes(final Blackhole bh) throws Exception {
+        public void read100kBytes(final Blackhole bh) throws Exception {
             bh.consume(read(new ByteArrayInputStream(Buffers.B_100K), bh));
         }
 
         @Benchmark
-        public void read_1000k_bytes(final Blackhole bh) throws Exception {
+        public void read1000kBytes(final Blackhole bh) throws Exception {
             bh.consume(read(new ByteArrayInputStream(Buffers.B_1000K), bh));
         }
 
         @Benchmark
-        public void read_100000k_bytes(final Blackhole bh) throws Exception {
+        public void read100000kBytes(final Blackhole bh) throws Exception {
             bh.consume(read(new ByteArrayInputStream(Buffers.B_100000K), bh));
         }
 
         //-- read chars to structure
 
         @Benchmark
-        public void read_1k_chars(final Blackhole bh) throws Exception {
+        public void read1kChars(final Blackhole bh) throws Exception {
             bh.consume(read(new CharArrayReader(Buffers.C_1K), bh));
         }
     */
     @Benchmark
-    public void read_3k_chars(final Blackhole bh) throws Exception {
+    public void read3kChars(final Blackhole bh) throws Exception {
         bh.consume(read(new CharArrayReader(Buffers.C_3K), bh));
     }
 
     @Benchmark
-    public void read_10k_chars(final Blackhole bh) throws Exception {
+    public void read10kChars(final Blackhole bh) throws Exception {
         bh.consume(read(new CharArrayReader(Buffers.C_10K), bh));
     }
 
     @Benchmark
-    public void read_100k_chars(final Blackhole bh) throws Exception {
+    public void read100kChars(final Blackhole bh) throws Exception {
         bh.consume(read(new CharArrayReader(Buffers.C_100K), bh));
     }
 
     @Benchmark
-    public void read_1000k_chars(final Blackhole bh) throws Exception {
+    public void read1000kChars(final Blackhole bh) throws Exception {
         bh.consume(read(new CharArrayReader(Buffers.C_1000K), bh));
     }
 
     @Benchmark
-    public void read_100000k_chars(final Blackhole bh) throws Exception {
+    public void read100000kChars(final Blackhole bh) throws Exception {
         bh.consume(read(new CharArrayReader(Buffers.C_100000K), bh));
     }
 
     @Benchmark
-    public void parse_only_combined_chars(final Blackhole bh) throws Exception {
+    public void parseOnlyCombinedChars(final Blackhole bh) throws Exception {
         bh.consume(parse(new CharArrayReader(Buffers.C_100K), bh));
         bh.consume(parse(new CharArrayReader(Buffers.C_100K), bh));
         bh.consume(parse(new CharArrayReader(Buffers.C_100K), bh));
@@ -238,7 +238,7 @@ public class BenchmarkStreamParser {
     }
 
     /*   @Benchmark
-       public void parse_only_combined_bytes(final Blackhole bh) throws Exception {
+       public void parseOnlyCombinedBytes(final Blackhole bh) throws Exception {
            bh.consume(parse(new ByteArrayInputStream(Buffers.B_100K), bh));
            bh.consume(parse(new ByteArrayInputStream(Buffers.B_100K), bh));
            bh.consume(parse(new ByteArrayInputStream(Buffers.B_100K), bh));
@@ -248,7 +248,7 @@ public class BenchmarkStreamParser {
        }
     */
     @Benchmark
-    public void read_combined_chars(final Blackhole bh) throws Exception {
+    public void readCombinedChars(final Blackhole bh) throws Exception {
         bh.consume(read(new CharArrayReader(Buffers.C_100K), bh));
         bh.consume(read(new CharArrayReader(Buffers.C_100K), bh));
         bh.consume(read(new CharArrayReader(Buffers.C_100K), bh));
@@ -258,7 +258,7 @@ public class BenchmarkStreamParser {
     }
     /*
         @Benchmark
-        public void read_combined_bytes(final Blackhole bh) throws Exception {
+        public void readCombinedBytes(final Blackhole bh) throws Exception {
             bh.consume(read(new ByteArrayInputStream(Buffers.B_100K), bh));
             bh.consume(read(new ByteArrayInputStream(Buffers.B_100K), bh));
             bh.consume(read(new ByteArrayInputStream(Buffers.B_100K), bh));

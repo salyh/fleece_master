@@ -27,6 +27,10 @@ import org.apache.commons.io.output.FileWriterWithEncoding;
 
 public class CreateJsonTestFiles {
 
+    private CreateJsonTestFiles() {
+
+    }
+
     public static void main(final String[] args) throws Exception {
 
         create();

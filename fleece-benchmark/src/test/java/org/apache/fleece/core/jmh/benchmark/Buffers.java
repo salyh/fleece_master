@@ -26,6 +26,10 @@ import org.apache.commons.io.IOUtils;
 
 public class Buffers {
 
+    private Buffers() {
+
+    }
+
     public static final byte[] B_1K = readBytes(1);
     public static final byte[] B_3K = readBytes(3);
     public static final byte[] B_10K = readBytes(10);
@@ -69,4 +73,5 @@ public class Buffers {
     public static void init() {
 
     }
+
 }
