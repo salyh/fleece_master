@@ -37,7 +37,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import static org.junit.Assert.assertEquals;
 
-public class MapperEnhancedTests {
+public class MapperEnhancedTest {
 
     @Test
     public void writeNull() {
