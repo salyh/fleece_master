@@ -24,22 +24,11 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.SortedMap;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.Comparator;
 
 import static org.junit.Assert.assertEquals;
 
 public class LiteralTest {
-    
     @Test
     public void writeReadNumbers() {
         NumberClass nc = new NumberClass();
@@ -48,21 +37,28 @@ public class LiteralTest {
         nc.setBi(new BigInteger("123"));
         nc.setDoubleNumber(123.123);
         nc.setBool(true);
-        nc.setByteNumber((byte)1);
+        nc.setByteNumber((byte) 1);
         nc.setFloatNumber(123);
-        nc.setShortNumber((short)1);
+        nc.setShortNumber((short) 1);
         nc.setLongNumber(123L);
         nc.setIntNumber(123);
-        
-        new MapperBuilder().build().writeObject(nc, sw);
-        System.out.println(sw.toString());
-        assertEquals("{\"intNumber\":123,\"floatNumber\":123.0,\"bg\":123.123,\"bool\":true,\"bi\":123,\"longNumber\":123,\"doubleNumber\":123.123}", sw.toString());
-        NumberClass read =  new MapperBuilder().build().readObject(new StringReader(sw.toString()), NumberClass.class);
+
+        final String expectedJson = "{\"shortNumber\":1,\"byteNumber\":1,\"intNumber\":123,\"floatNumber\":123.0,\"bg\":123.123,\"bool\":true,\"bi\":123,\"longNumber\":123,\"doubleNumber\":123.123}";
+        final Comparator<String> attributeOrder = new Comparator<String>() {
+            @Override
+            public int compare(final String o1, final String o2) {
+                return expectedJson.indexOf(o1) - expectedJson.indexOf(o2);
+            }
+        };
+        new MapperBuilder().setAttributeOrder(attributeOrder).build().writeObject(nc, sw);
+        assertEquals(expectedJson, sw.toString());
+        final NumberClass read = new MapperBuilder().setAttributeOrder(attributeOrder).build()
+                    .readObject(new StringReader(sw.toString()), NumberClass.class);
         assertEquals(nc, read);
-       
+
     }
-    
-    @Test(expected=NumberFormatException.class)
+
+    @Test(expected = NumberFormatException.class)
     public void writeReadNumbersInf() {
         NumberClass nc = new NumberClass();
         final StringWriter sw = new StringWriter();
@@ -70,17 +66,17 @@ public class LiteralTest {
         nc.setBi(new BigInteger("123"));
         nc.setDoubleNumber(Double.POSITIVE_INFINITY);
         nc.setBool(true);
-        nc.setByteNumber((byte)1);
+        nc.setByteNumber((byte) 1);
         nc.setFloatNumber(123);
-        nc.setShortNumber((short)1);
+        nc.setShortNumber((short) 1);
         nc.setLongNumber(123L);
         nc.setIntNumber(123);
-        
+
         new MapperBuilder().build().writeObject(nc, sw);
-       
+
     }
-    
-    @Test(expected=NumberFormatException.class)
+
+    @Test(expected = NumberFormatException.class)
     public void writeReadNumbersNaN() {
         NumberClass nc = new NumberClass();
         final StringWriter sw = new StringWriter();
@@ -88,17 +84,15 @@ public class LiteralTest {
         nc.setBi(new BigInteger("123"));
         nc.setDoubleNumber(Double.NaN);
         nc.setBool(true);
-        nc.setByteNumber((byte)1);
+        nc.setByteNumber((byte) 1);
         nc.setFloatNumber(123);
-        nc.setShortNumber((short)1);
+        nc.setShortNumber((short) 1);
         nc.setLongNumber(123L);
         nc.setIntNumber(123);
-        
-        new MapperBuilder().build().writeObject(nc, sw);
-       
-    }
 
-    
+        new MapperBuilder().build().writeObject(nc, sw);
+
+    }
 
     public static class NumberClass {
         private BigDecimal bg;
@@ -110,60 +104,79 @@ public class LiteralTest {
         private double doubleNumber;
         private float floatNumber;
         private boolean bool;
+
         public BigDecimal getBg() {
             return bg;
         }
+
         public void setBg(BigDecimal bg) {
             this.bg = bg;
         }
+
         public BigInteger getBi() {
             return bi;
         }
+
         public void setBi(BigInteger bi) {
             this.bi = bi;
         }
+
         public int getIntNumber() {
             return intNumber;
         }
+
         public void setIntNumber(int intNumber) {
             this.intNumber = intNumber;
         }
+
         public long getLongNumber() {
             return longNumber;
         }
+
         public void setLongNumber(long longNumber) {
             this.longNumber = longNumber;
         }
+
         public byte getByteNumber() {
             return byteNumber;
         }
+
         public void setByteNumber(byte byteNumber) {
             this.byteNumber = byteNumber;
         }
+
         public short getShortNumber() {
             return shortNumber;
         }
+
         public void setShortNumber(short shortNumber) {
             this.shortNumber = shortNumber;
         }
+
         public double getDoubleNumber() {
             return doubleNumber;
         }
+
         public void setDoubleNumber(double doubleNumber) {
             this.doubleNumber = doubleNumber;
         }
+
         public float getFloatNumber() {
             return floatNumber;
         }
+
         public void setFloatNumber(float floatNumber) {
             this.floatNumber = floatNumber;
         }
+
         public boolean isBool() {
             return bool;
         }
+
         public void setBool(boolean bool) {
             this.bool = bool;
         }
+
         @Override
         public int hashCode() {
             final int prime = 31;
@@ -181,52 +194,60 @@ public class LiteralTest {
             result = prime * result + shortNumber;
             return result;
         }
+
         @Override
         public boolean equals(Object obj) {
-            if (this == obj)
+            if (this == obj) {
                 return true;
-            if (obj == null)
+            }
+            if (obj == null) {
                 return false;
-            if (getClass() != obj.getClass())
+            }
+            if (getClass() != obj.getClass()) {
                 return false;
+            }
             NumberClass other = (NumberClass) obj;
             if (bg == null) {
-                if (other.bg != null)
+                if (other.bg != null) {
                     return false;
-            } else if (!bg.equals(other.bg))
+                }
+            } else if (!bg.equals(other.bg)) {
                 return false;
+            }
             if (bi == null) {
-                if (other.bi != null)
+                if (other.bi != null) {
                     return false;
-            } else if (!bi.equals(other.bi))
+                }
+            } else if (!bi.equals(other.bi)) {
                 return false;
-            if (bool != other.bool)
+            }
+            if (bool != other.bool) {
                 return false;
-            if (byteNumber != other.byteNumber)
+            }
+            if (byteNumber != other.byteNumber) {
                 return false;
-            if (Double.doubleToLongBits(doubleNumber) != Double.doubleToLongBits(other.doubleNumber))
+            }
+            if (Double.doubleToLongBits(doubleNumber) != Double.doubleToLongBits(other.doubleNumber)) {
                 return false;
-            if (Float.floatToIntBits(floatNumber) != Float.floatToIntBits(other.floatNumber))
+            }
+            if (Float.floatToIntBits(floatNumber) != Float.floatToIntBits(other.floatNumber)) {
                 return false;
-            if (intNumber != other.intNumber)
+            }
+            if (intNumber != other.intNumber) {
                 return false;
-            if (longNumber != other.longNumber)
+            }
+            if (longNumber != other.longNumber) {
                 return false;
-            if (shortNumber != other.shortNumber)
+            }
+            if (shortNumber != other.shortNumber) {
                 return false;
+            }
             return true;
         }
+
         @Override
         public String toString() {
-            return "NumberClass [bg=" + bg + ", bi=" + bi + ", intNumber=" + intNumber + ", longNumber=" + longNumber + ", byteNumber="
-                    + byteNumber + ", shortNumber=" + shortNumber + ", doubleNumber=" + doubleNumber + ", floatNumber=" + floatNumber
-                    + ", bool=" + bool + "]";
+            return "NumberClass [bg=" + bg + ", bi=" + bi + ", intNumber=" + intNumber + ", longNumber=" + longNumber + ", byteNumber=" + byteNumber + ", shortNumber=" + shortNumber + ", doubleNumber=" + doubleNumber + ", floatNumber=" + floatNumber + ", bool=" + bool + "]";
         }
-        
-        
-
-        
     }
-    
-    
 }

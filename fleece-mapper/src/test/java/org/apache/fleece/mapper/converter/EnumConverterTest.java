@@ -18,7 +18,6 @@
  */
 package org.apache.fleece.mapper.converter;
 
-import org.apache.fleece.mapper.converter.EnumConverter;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
