@@ -27,14 +27,29 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
-    private final JsonArrayImpl array = new JsonArrayImpl();
+    
+    //TODO if builder is used by multiple threads consider make this volatile
+    private JsonArrayImpl array;
+
+    public JsonArrayBuilderImpl(JsonArrayImpl array) {
+        super();
+        if(array == null) {
+            throw npe();
+        }
+        this.array = array;
+    }
+    
+    public JsonArrayBuilderImpl() {
+        super();
+        this.array = new JsonArrayImpl();
+    }
 
     @Override
     public JsonArrayBuilder add(final JsonValue value) {
         if (value == null) {
             throw npe();
         }
-        array.addInternal(value);
+        array=new JsonArrayImpl(array,value);
         return this;
     }
 
@@ -43,7 +58,8 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         if (value == null) {
             throw npe();
         }
-        array.addInternal(new JsonStringImpl(value));
+       
+        array=new JsonArrayImpl(array,new JsonStringImpl(value));
         return this;
     }
 
@@ -52,7 +68,8 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         if (value == null) {
             throw npe();
         }
-        array.addInternal(new JsonNumberImpl(value));
+        
+        array=new JsonArrayImpl(array,new JsonNumberImpl(value));
         return this;
     }
 
@@ -61,19 +78,22 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         if (value == null) {
             throw npe();
         }
-        array.addInternal(new JsonNumberImpl(new BigDecimal(value)));
+       
+        array=new JsonArrayImpl(array,new JsonNumberImpl(new BigDecimal(value)));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final int value) {
-        array.addInternal(new JsonLongImpl(value));
+       
+        array=new JsonArrayImpl(array,new JsonLongImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final long value) {
-        array.addInternal(new JsonLongImpl(value));
+     
+        array=new JsonArrayImpl(array,new JsonLongImpl(value));
         return this;
     }
 
@@ -86,19 +106,22 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         if (valueObject.isNaN()) {
             throw new NumberFormatException("value must not be NaN");
         }
-        array.addInternal(new JsonDoubleImpl(value));
+       
+        array=new JsonArrayImpl(array,new JsonDoubleImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final boolean value) {
-        array.addInternal(value ? JsonValue.TRUE : JsonValue.FALSE);
+       
+        array=new JsonArrayImpl(array,value ? JsonValue.TRUE : JsonValue.FALSE);
         return this;
     }
 
     @Override
     public JsonArrayBuilder addNull() {
-        array.addInternal(JsonValue.NULL);
+       
+        array=new JsonArrayImpl(array,JsonValue.NULL);
         return this;
     }
 
@@ -107,7 +130,8 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         if (builder == null) {
             throw new NullPointerException("builder must not be null");
         }
-        array.addInternal(builder.build());
+        
+        array=new JsonArrayImpl(array,builder.build());
         return this;
     }
 
@@ -116,7 +140,8 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         if (builder == null) {
             throw new NullPointerException("builder must not be null");
         }
-        array.addInternal(builder.build());
+       
+        array=new JsonArrayImpl(array,builder.build());
         return this;
     }
 
@@ -126,6 +151,6 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
     }
 
     private static NullPointerException npe() {
-        throw new NullPointerException("value must not be null");
+        return new NullPointerException("value must not be null");
     }
 }

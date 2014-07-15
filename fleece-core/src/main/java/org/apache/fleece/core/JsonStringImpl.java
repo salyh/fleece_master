@@ -20,10 +20,10 @@ package org.apache.fleece.core;
 
 import javax.json.JsonString;
 
-public class JsonStringImpl implements JsonString {
+public final class JsonStringImpl implements JsonString {
     private final String value;
     private String escape;
-    private Integer hashCode = null;
+    private int hashCode;
 
     public JsonStringImpl(final String value) {
         this(value, null);
@@ -51,18 +51,23 @@ public class JsonStringImpl implements JsonString {
 
     @Override
     public String toString() {
-        if (escape == null) {
-            escape = Strings.escape(value);
+        String s = escape;
+        if (s == null) {
+            s = Strings.escape(value);
+            escape=s;
         }
-        return escape;
+        return s;
     }
-
+    //http://invalidcodeexception.com/do-immutability-really-means-thread-safety/
+    //http://stackoverflow.com/questions/18948990/immutable-objects-and-lazy-initialization
     @Override
     public int hashCode() {
-        if (hashCode == null) {
-            hashCode = value.hashCode();
+        int h = hashCode;
+        if (h == 0) { //just ignore the case that there might be a valid hashcode of 0 (but thats rare)
+            h = value.hashCode();
+            hashCode = h;
         }
-        return hashCode;
+        return h;
     }
 
     @Override

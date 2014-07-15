@@ -18,13 +18,17 @@
  */
 package org.apache.fleece.core;
 
+import javax.json.Json;
 import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
+
 import java.math.BigDecimal;
 
 public class JsonReaderImpl implements JsonReader {
@@ -87,12 +91,12 @@ public class JsonReaderImpl implements JsonReader {
     }
 
     private static class JsonObjectListener implements JsonReaderListener {
-        private JsonObjectImpl object = new JsonObjectImpl();
+        private JsonObjectBuilder builder = Json.createObjectBuilder();
         private String key = null;
 
         @Override
         public Object getObject() {
-            return object;
+            return builder.build();
         }
 
         @Override
@@ -103,58 +107,58 @@ public class JsonReaderImpl implements JsonReader {
         @Override
         public void onValue(final String string, final String escaped) {
             final JsonStringImpl value = new JsonStringImpl(string, escaped);
-            object.putInternal(key, value);
+            builder.add(key, value);
         }
 
         @Override
         public void onLong(final long aLong) {
             final JsonLongImpl value = new JsonLongImpl(aLong);
-            object.putInternal(key, value);
+            builder.add(key, value);
         }
 
         @Override
         public void onBigDecimal(final BigDecimal bigDecimal) {
             final JsonNumberImpl value = new JsonNumberImpl(bigDecimal);
-            object.putInternal(key, value);
+            builder.add(key, value);
         }
 
         @Override
         public void onNull() {
             final JsonValue value = JsonValue.NULL;
-            object.putInternal(key, value);
+            builder.add(key, value);
         }
 
         @Override
         public void onTrue() {
             final JsonValue value = JsonValue.TRUE;
-            object.putInternal(key, value);
+            builder.add(key, value);
         }
 
         @Override
         public void onFalse() {
             final JsonValue value = JsonValue.FALSE;
-            object.putInternal(key, value);
+            builder.add(key, value);
         }
 
         @Override
         public void onObject(final Object obj) {
             final JsonObject jsonObject = JsonObject.class.cast(obj);
-            object.putInternal(key, jsonObject);
+            builder.add(key, jsonObject);
         }
 
         @Override
         public void onArray(final Object arr) {
-            final JsonArray jsonArry = JsonArray.class.cast(arr);
-            object.putInternal(key, jsonArry);
+            final JsonArray jsonArray = JsonArray.class.cast(arr);
+            builder.add(key, jsonArray);
         }
     }
 
     private static class JsonArrayListener implements JsonReaderListener {
-        private JsonArrayImpl array = new JsonArrayImpl();
-
+        JsonArrayBuilder builder = Json.createArrayBuilder();
+  
         @Override
         public Object getObject() {
-            return array;
+            return builder.build();
         }
 
         @Override
@@ -165,49 +169,49 @@ public class JsonReaderImpl implements JsonReader {
         @Override
         public void onValue(final String string, final String escaped) {
             final JsonStringImpl value = new JsonStringImpl(string, escaped);
-            array.addInternal(value);
+            builder.add(value);
         }
 
         @Override
         public void onLong(final long aLong) {
             final JsonLongImpl value = new JsonLongImpl(aLong);
-            array.addInternal(value);
+            builder.add(value);
         }
 
         @Override
         public void onBigDecimal(final BigDecimal bigDecimal) {
             final JsonNumberImpl value = new JsonNumberImpl(bigDecimal);
-            array.addInternal(value);
+            builder.add(value);
         }
 
         @Override
         public void onNull() {
             final JsonValue value = JsonValue.NULL;
-            array.addInternal(value);
+            builder.add(value);
         }
 
         @Override
         public void onTrue() {
             final JsonValue value = JsonValue.TRUE;
-            array.addInternal(value);
+            builder.add(value);
         }
 
         @Override
         public void onFalse() {
             final JsonValue value = JsonValue.FALSE;
-            array.addInternal(value);
+            builder.add(value);
         }
 
         @Override
         public void onObject(final Object obj) {
             final JsonObject jsonObject = JsonObject.class.cast(obj);
-            array.addInternal(jsonObject);
+            builder.add(jsonObject);
         }
 
         @Override
         public void onArray(final Object arr) {
             final JsonArray jsonArry = JsonArray.class.cast(arr);
-            array.addInternal(jsonArry);
+            builder.add(jsonArry);
         }
     }
 

@@ -22,7 +22,7 @@ import javax.json.JsonNumber;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public class JsonDoubleImpl implements JsonNumber {
+public final class JsonDoubleImpl implements JsonNumber {
     private final double value;
 
     public JsonDoubleImpl(final double value) {

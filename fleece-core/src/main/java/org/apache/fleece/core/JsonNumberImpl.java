@@ -19,12 +19,13 @@
 package org.apache.fleece.core;
 
 import javax.json.JsonNumber;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public class JsonNumberImpl implements JsonNumber {
+public final class JsonNumberImpl implements JsonNumber {
     private final BigDecimal value;
-    private Integer hashCode = null;
+    private int hashCode;
 
     public JsonNumberImpl(final BigDecimal decimal) {
         this.value = decimal;
@@ -87,10 +88,12 @@ public class JsonNumberImpl implements JsonNumber {
 
     @Override
     public int hashCode() {
-        if (hashCode == null) {
-            hashCode = value.hashCode();
+        int h = hashCode;
+        if (h == 0) { //just ignore the case that there might be a valid hashcode of 0 (but thats rare)
+            h = value.hashCode();
+            hashCode=h;
         }
-        return hashCode;
+        return h;
     }
 
     @Override

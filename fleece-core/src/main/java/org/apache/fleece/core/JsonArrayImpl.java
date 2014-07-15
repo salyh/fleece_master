@@ -23,14 +23,19 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 
-public class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray, Serializable {
-    private Integer hashCode = null;
+public final class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray, Serializable {
+    private int hashCode;
+    private boolean initialized;
 
     private <T> T value(final int idx, final Class<T> type) {
         if (idx > size()) {
@@ -38,6 +43,34 @@ public class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray, S
         }
         return type.cast(get(idx));
     }
+
+    public JsonArrayImpl() {
+        super();
+        initialized=true;
+    }
+
+    public JsonArrayImpl(Collection<? extends JsonValue> jsonValues) {
+        super(jsonValues);
+        initialized=true;
+    }
+    
+    public JsonArrayImpl(Collection<? extends JsonValue> jsonValues, JsonValue... additionalJsonValues) {
+        super(jsonValues);
+        super.addAll(size(),Arrays.asList(additionalJsonValues));
+        initialized=true;
+    }
+    
+    public JsonArrayImpl(JsonArray jsonArray, JsonValue... additionalJsonValues) {
+        super(jsonArray);
+        super.addAll(size(), Arrays.asList(additionalJsonValues));
+        initialized=true;
+    }
+    
+    public JsonArrayImpl(JsonValue... jsonValues) {
+        super(Arrays.asList(jsonValues));
+        initialized=true;
+    }
+
 
     @Override
     public JsonObject getJsonObject(final int index) {
@@ -61,7 +94,9 @@ public class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray, S
 
     @Override
     public <T extends JsonValue> List<T> getValuesAs(final Class<T> clazz) {
-        return (List<T>) this;
+        return (List<T>) Collections.unmodifiableList(this);
+        //or a shallow copy return (List<T>) this.clone();
+        //or defense copy -> new LinkedList<JsonValue>(this);
     }
 
     @Override
@@ -143,9 +178,9 @@ public class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray, S
 
     //make protected if class is supposed to be subclassed
     //make package private otherwise
-    protected void addInternal(final JsonValue value) {
-        super.add(value);
-    }
+    //protected void addInternal(final JsonValue value) {
+    //    super.add(value);
+    //}
 
     @Override
     public boolean add(final JsonValue element) {
@@ -154,7 +189,11 @@ public class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray, S
 
     @Override
     public boolean addAll(final int index, final Collection<? extends JsonValue> c) {
-        throw immutable();
+        if (initialized) {
+            throw immutable();
+        } else {
+            return super.addAll(index, c);
+        }
     }
 
     @Override
@@ -191,16 +230,81 @@ public class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray, S
     public JsonValue set(final int index, final JsonValue element) {
         throw immutable();
     }
+    
+    @Override
+    public List<JsonValue> subList(int fromIndex, int toIndex) {
+        return Collections.unmodifiableList(super.subList(fromIndex, toIndex));
+    }
 
-    private static UnsupportedOperationException immutable() {
-        throw new UnsupportedOperationException("JsonArray is immutable. You can create another one thanks to JsonArrayBuilder");
+    @Override
+    public ListIterator<JsonValue> listIterator(int index) {
+        
+        final ListIterator<JsonValue> internal = super.listIterator(index);
+        
+        return new ListIterator<JsonValue>() {
+
+            @Override
+            public boolean hasNext() {
+                return internal.hasNext();
+            }
+
+            @Override
+            public JsonValue next() {
+                return internal.next();
+            }
+
+            @Override
+            public boolean hasPrevious() {
+                return internal.hasPrevious();
+            }
+
+            @Override
+            public JsonValue previous() {
+                return internal.previous();
+            }
+
+            @Override
+            public int nextIndex() {
+                return internal.nextIndex();
+            }
+
+            @Override
+            public int previousIndex() {
+                return internal.previousIndex();
+            }
+
+            @Override
+            public void remove() {
+                throw immutable();
+                
+            }
+
+            @Override
+            public void set(JsonValue e) {
+                throw immutable();
+                
+            }
+
+            @Override
+            public void add(JsonValue e) {
+                throw immutable();
+                
+            }
+            
+        };
+    }
+
+    static UnsupportedOperationException immutable() {
+        return new UnsupportedOperationException("JsonArray is immutable. You can create another one thanks to JsonArrayBuilder");
     }
 
     @Override
     public int hashCode() {
-        if (hashCode == null) {
-            hashCode = super.hashCode();
+        int h = hashCode;
+        if (h == 0) { //just ignore the case that there might be a valid hashcode of 0 (but thats rare)
+            h = super.hashCode();
+            hashCode=h;
         }
-        return hashCode;
+        return h;
     }
 }

@@ -23,13 +23,19 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
-public class JsonObjectImpl extends LinkedHashMap<String, JsonValue> implements JsonObject, Serializable {
-    private Integer hashCode = null;
+public final class JsonObjectImpl extends LinkedHashMap<String, JsonValue> implements JsonObject, Serializable {
+    private int hashCode;
 
     private <T> T value(final String name, final Class<T> clazz) {
         final Object v = get(name);
@@ -38,6 +44,26 @@ public class JsonObjectImpl extends LinkedHashMap<String, JsonValue> implements 
         }
         throw new NullPointerException("no mapping for " + name);
     }
+
+    
+    public JsonObjectImpl() {
+        super();      
+    }
+
+    public JsonObjectImpl(String key, JsonValue value) {
+        super();      
+        super.put(key, value);
+    }
+    
+    public JsonObjectImpl(Map<? extends String, ? extends JsonValue> m) {
+        super(m);
+    }
+
+    public JsonObjectImpl(JsonObject jsonObject, String key, JsonValue value) {
+        super(jsonObject);
+        super.put(key, value);
+    }
+
 
     @Override
     public JsonArray getJsonArray(final String name) {
@@ -115,7 +141,7 @@ public class JsonObjectImpl extends LinkedHashMap<String, JsonValue> implements 
     @Override
     public String toString() {
         final StringBuilder builder = new StringBuilder("{");
-        final Iterator<Map.Entry<String, JsonValue>> it = entrySet().iterator();
+        final Iterator<Map.Entry<String, JsonValue>> it = super.entrySet().iterator();
         boolean hasNext = it.hasNext();
         while (hasNext) {
             final Map.Entry<String, JsonValue> entry = it.next();
@@ -161,20 +187,38 @@ public class JsonObjectImpl extends LinkedHashMap<String, JsonValue> implements 
     public JsonValue remove(Object key) {
         throw immutable();
     }
+    
+    
 
-    private static UnsupportedOperationException immutable() {
-        throw new UnsupportedOperationException("JsonObject is immutable. You can create another one thanks to JsonObjectBuilder");
+    @Override
+    public Set<String> keySet() {
+        return Collections.unmodifiableSet(super.keySet());
     }
 
-    public void putInternal(final String name, final JsonValue value) {
-        super.put(name, value);
+
+    @Override
+    public Collection<JsonValue> values() { 
+        return Collections.unmodifiableCollection(super.values());
+    }
+
+
+    @Override
+    public Set<Entry<String, JsonValue>> entrySet() {
+        return new HashSet<Map.Entry<String,JsonValue>>(super.entrySet());
+    }
+
+
+    private static UnsupportedOperationException immutable() {
+        return new UnsupportedOperationException("JsonObject is immutable. You can create another one thanks to JsonObjectBuilder");
     }
 
     @Override
     public int hashCode() {
-        if (hashCode == null) {
-            hashCode = super.hashCode();
+        int h=hashCode;
+        if (h == 0) { //just ignore the case that there might be a valid hashcode of 0 (but thats rare)
+            h = super.hashCode();
+            hashCode=h;
         }
-        return hashCode;
+        return h;
     }
 }

@@ -18,8 +18,6 @@
  */
 package org.apache.fleece.core;
 
-import org.apache.fleece.core.JsonObjectImpl;
-import org.apache.fleece.core.JsonStringImpl;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -27,8 +25,7 @@ import static org.junit.Assert.assertEquals;
 public class JsonObjectImplTest {
     @Test
     public void objectToString() {
-        final JsonObjectImpl object = new JsonObjectImpl();
-        object.putInternal("a", new JsonStringImpl("b"));
+        final JsonObjectImpl object = new JsonObjectImpl("a", new JsonStringImpl("b"));
         assertEquals("{\"a\":\"b\"}", object.toString());
     }
 }

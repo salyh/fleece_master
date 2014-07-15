@@ -18,10 +18,12 @@
  */
 package org.apache.fleece.core;
 
-import javax.json.JsonArray;
+import java.util.Collections;
+import java.util.ListIterator;
 
-import org.apache.fleece.core.JsonArrayImpl;
-import org.apache.fleece.core.JsonStringImpl;
+import javax.json.JsonArray;
+import javax.json.JsonValue;
+
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -29,18 +31,13 @@ import static org.junit.Assert.*;
 public class JsonArrayImplTest {
     @Test
     public void arrayToString() {
-        final JsonArrayImpl object = new JsonArrayImpl();
-        object.addInternal(new JsonStringImpl("a"));
-        object.addInternal(new JsonStringImpl("b"));
+        final JsonArrayImpl object = new JsonArrayImpl(new JsonValue[]{new JsonStringImpl("a"),new JsonStringImpl("b")});
         assertEquals("[\"a\",\"b\"]", object.toString());
     }
     
     @Test
     public void arrayIndex() {
-        final JsonArrayImpl object = new JsonArrayImpl();
-        object.addInternal(new JsonStringImpl("a"));
-        object.addInternal(new JsonStringImpl("b"));
-        object.addInternal(new JsonLongImpl(5));
+        final JsonArrayImpl object = new JsonArrayImpl(new JsonValue[]{new JsonStringImpl("a"),new JsonStringImpl("b"),new JsonLongImpl(5)});
         final JsonArray array = (JsonArray) object;
         assertFalse(array.isEmpty());
         assertEquals("a", object.getJsonString(0).getString());
@@ -54,5 +51,45 @@ public class JsonArrayImplTest {
         final JsonArray array = new JsonArrayImpl();
         assertTrue(array.isEmpty());
         assertEquals("[]", array.toString());
+    }
+    
+    @Test(expected=UnsupportedOperationException.class)
+    public void immutableAddAll() {
+        final JsonArray array = new JsonArrayImpl();
+        array.addAll(Collections.EMPTY_LIST);
+    }
+    
+    @Test(expected=UnsupportedOperationException.class)
+    public void immutableSublist() {
+        final JsonArray array = new JsonArrayImpl(new JsonStringImpl("a"),new JsonStringImpl("b"));
+        assertEquals(2, array.size());
+        array.subList(0,1).add(null);
+    }
+    
+    @Test(expected=IndexOutOfBoundsException.class)
+    public void immutableSublistOOB() {
+        final JsonArray array = new JsonArrayImpl(new JsonStringImpl("a"),new JsonStringImpl("b"));
+        assertEquals(2, array.size());
+        array.subList(0,5);
+    }
+    
+    @Test
+    public void immutableListIterator() {
+        final JsonArray array = new JsonArrayImpl(new JsonStringImpl("a"),new JsonStringImpl("b"));
+        ListIterator<JsonValue> it = array.listIterator();
+        assertTrue(it.hasNext());
+        assertNotNull(it.next());
+        assertNotNull(it.next());
+        assertFalse(it.hasNext());
+    }
+    
+    @Test(expected=UnsupportedOperationException.class)
+    public void immutableListIteratorRemove() {
+        final JsonArray array = new JsonArrayImpl(new JsonStringImpl("a"),new JsonStringImpl("b"));
+        ListIterator<JsonValue> it = array.listIterator();
+        assertTrue(it.hasNext());
+        assertNotNull(it.next());
+        it.remove();
+
     }
 }
