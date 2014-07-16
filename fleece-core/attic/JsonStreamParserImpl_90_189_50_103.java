@@ -27,7 +27,7 @@ import java.math.BigDecimal;
 import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParsingException;
 
-public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonParser {
+public class JsonStreamParserImpl_90_189_50_103 implements JsonChars, EscapedStringAwareJsonParser {
 
     private final char[] buffer;
     private final Reader in;
@@ -58,8 +58,8 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
     private int openObjects = 0;
     private int openArrays = 0;
 
-    public JsonStreamParserImpl(final Reader reader, final int maxStringLength, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final BufferStrategy.BufferProvider<char[]> valueBuffer) {
+    public JsonStreamParserImpl_90_189_50_103(final Reader reader, final int maxStringLength,
+            final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer) {
 
         this.maxStringSize = maxStringLength <= 0 ? 8192 : maxStringLength;
         this.currentValue = valueBuffer.newBuffer();
@@ -77,6 +77,11 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
         currentValue[valueLength] = c;
         valueLength++;
+    }
+
+    private void resetValue() {
+        valueLength = 0;
+
     }
 
     private String getValue() {
@@ -228,17 +233,16 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             currentIntegralNumber = null;
         }
 
-        valueLength = 0;
+        resetValue();
 
         final char c = readNextNonWhitespaceChar();
 
         switch (c) {
 
             case COMMA:
-
-                //lastSignificantChar must one of the following: " ] }
-                if (lastSignificantChar >= 0 && lastSignificantChar != I_QUOTE && lastSignificantChar != I_END_ARRAY_CHAR
-                        && lastSignificantChar != I_END_OBJECT_CHAR) {
+                final char lastSignificant = (char) lastSignificantChar;
+                if (lastSignificantChar >= 0 && lastSignificant != QUOTE && lastSignificant != END_ARRAY_CHAR
+                        && lastSignificant != END_OBJECT_CHAR) {
                     throw new JsonParsingException("Unexpected character " + c + " (last significant was " + lastSignificantChar + ")",
                             createLocation());
                 }
@@ -305,17 +309,19 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
         }
 
-        //System.out.println(" --> "+event+" ->'"+getValue()+"'");
-        return event;
+        if (event != null) {
+            //System.out.println(" --> "+event+" ->'"+getValue()+"'");
+            return event;
+        }
 
-        //throw new JsonParsingException("Unexpected character " + c, createLocation());
+        throw new JsonParsingException("Unexpected character " + c, createLocation());
 
     }
 
     private void handleStartObject(final char c) {
-
+        final char significantChar = (char) lastSignificantChar; // cast eagerly means we avoid 2 castings and are slwoer in error case only
         if (lastSignificantChar == -2
-                || (lastSignificantChar != -1 && lastSignificantChar != I_KEY_SEPARATOR && lastSignificantChar != I_COMMA && lastSignificantChar != I_START_ARRAY_CHAR)) {
+                || (lastSignificantChar != -1 && significantChar != KEY_SEPARATOR && significantChar != COMMA && significantChar != START_ARRAY_CHAR)) {
             throw new JsonParsingException("Unexpected character " + c + " (last significant was " + lastSignificantChar + ")",
                     createLocation());
         }
@@ -327,9 +333,9 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
     }
 
     private void handleEndObject(final char c) {
-
-        if (lastSignificantChar >= 0 && lastSignificantChar != I_START_OBJECT_CHAR && lastSignificantChar != I_END_ARRAY_CHAR
-                && lastSignificantChar != I_QUOTE && lastSignificantChar != I_END_OBJECT_CHAR) {
+        final char significantChar = (char) lastSignificantChar;
+        if (lastSignificantChar >= 0 && significantChar != START_OBJECT_CHAR && significantChar != END_ARRAY_CHAR
+                && significantChar != QUOTE && significantChar != END_OBJECT_CHAR) {
             throw new JsonParsingException("Unexpected character " + c + " (last significant was " + lastSignificantChar + ")",
                     createLocation());
         }
@@ -345,8 +351,9 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     private void handleStartArray(final char c) {
 
+        final char significantChar = (char) lastSignificantChar;
         if (lastSignificantChar == -2
-                || (lastSignificantChar != -1 && lastSignificantChar != I_KEY_SEPARATOR && lastSignificantChar != I_COMMA && lastSignificantChar != I_START_ARRAY_CHAR)) {
+                || (lastSignificantChar != -1 && significantChar != KEY_SEPARATOR && significantChar != COMMA && significantChar != START_ARRAY_CHAR)) {
             throw new JsonParsingException("Unexpected character " + c + " (last significant was " + lastSignificantChar + ")",
                     createLocation());
         }
@@ -358,8 +365,9 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     private void handleEndArray(final char c) {
 
-        if (lastSignificantChar >= 0 && lastSignificantChar != I_START_ARRAY_CHAR && lastSignificantChar != I_END_ARRAY_CHAR
-                && lastSignificantChar != I_END_OBJECT_CHAR && lastSignificantChar != I_QUOTE) {
+        final char significantChar = (char) lastSignificantChar;
+        if (lastSignificantChar >= 0 && significantChar != START_ARRAY_CHAR && significantChar != END_ARRAY_CHAR
+                && significantChar != END_OBJECT_CHAR && significantChar != QUOTE) {
             throw new JsonParsingException("Unexpected character " + c + " (last significant was " + lastSignificantChar + ")",
                     createLocation());
         }
@@ -425,8 +433,11 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     private void handleQuote(final char c) {
 
-        if (lastSignificantChar >= 0 && lastSignificantChar != I_KEY_SEPARATOR && lastSignificantChar != I_START_OBJECT_CHAR
-                && lastSignificantChar != I_START_ARRAY_CHAR && lastSignificantChar != I_COMMA) {
+        //System.out.println("detect quote, last sig "+(char) lastSignificantChar);
+
+        final char significantChar = (char) lastSignificantChar;
+        if (lastSignificantChar >= 0 /*&& significantChar != QUOTE*/&& significantChar != KEY_SEPARATOR
+                && significantChar != START_OBJECT_CHAR && significantChar != START_ARRAY_CHAR && significantChar != COMMA) {
             throw new JsonParsingException("Unexpected character " + c + " (last significant was " + lastSignificantChar + ")",
                     createLocation());
         }
@@ -453,8 +464,8 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
     }
 
     private void handleLiteral(final char c) {
-        if (lastSignificantChar >= 0 && lastSignificantChar != I_KEY_SEPARATOR && lastSignificantChar != I_COMMA
-                && lastSignificantChar != I_START_ARRAY_CHAR) {
+        if (lastSignificantChar >= 0 && lastSignificantChar != KEY_SEPARATOR && lastSignificantChar != COMMA
+                && lastSignificantChar != START_ARRAY_CHAR) {
             throw new JsonParsingException("unexpected character " + c + " last significant " + (char) lastSignificantChar,
                     createLocation());
         }
@@ -645,7 +656,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             return currentBigDecimalNumber;
         }
 
-        return (currentBigDecimalNumber = new BigDecimal(currentValue, 0, valueLength));
+        return (currentBigDecimalNumber = new BigDecimal(getString()));
     }
 
     @Override

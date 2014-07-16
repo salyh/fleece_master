@@ -27,10 +27,8 @@ import java.math.BigDecimal;
 import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParsingException;
 
-public class JsonStreamParserImpl_85_182_49_102 implements JsonChars, EscapedStringAwareJsonParser {
+public class JsonStreamParserImpl_89_184_47_104 implements JsonChars, EscapedStringAwareJsonParser {
 
-
-    
     private final char[] buffer;
     private final Reader in;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
@@ -60,8 +58,8 @@ public class JsonStreamParserImpl_85_182_49_102 implements JsonChars, EscapedStr
     private int openObjects = 0;
     private int openArrays = 0;
 
-    public JsonStreamParserImpl_85_182_49_102(final Reader reader, final int maxStringLength, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final BufferStrategy.BufferProvider<char[]> valueBuffer) {
+    public JsonStreamParserImpl_89_184_47_104(final Reader reader, final int maxStringLength,
+            final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer) {
 
         this.maxStringSize = maxStringLength <= 0 ? 8192 : maxStringLength;
         this.currentValue = valueBuffer.newBuffer();
@@ -236,9 +234,15 @@ public class JsonStreamParserImpl_85_182_49_102 implements JsonChars, EscapedStr
     public final Event next() {
 
         event = null;
-        if(isCurrentNumberIntegral) isCurrentNumberIntegral = false;
-        if(currentBigDecimalNumber !=null) currentBigDecimalNumber = null;
-        if(currentIntegralNumber != null)currentIntegralNumber = null;
+        if (isCurrentNumberIntegral) {
+            isCurrentNumberIntegral = false;
+        }
+        if (currentBigDecimalNumber != null) {
+            currentBigDecimalNumber = null;
+        }
+        if (currentIntegralNumber != null) {
+            currentIntegralNumber = null;
+        }
 
         resetValue();
 
@@ -478,8 +482,6 @@ public class JsonStreamParserImpl_85_182_49_102 implements JsonChars, EscapedStr
         }
 
     }
-    
-
 
     private void handleLiteral(final char c) {
         if (lastSignificantChar >= 0 && lastSignificantChar != KEY_SEPARATOR && lastSignificantChar != COMMA
@@ -490,122 +492,121 @@ public class JsonStreamParserImpl_85_182_49_102 implements JsonChars, EscapedStr
 
         lastSignificantChar = -2;
 
-     
-            // probe literals
-            switch (c) {
-                case TRUE_T:
-                    final char[] tmpt = read(3);
-                    if (tmpt[0] != TRUE_R || tmpt[1] != TRUE_U || tmpt[2] != TRUE_E) {
-                        throw new JsonParsingException("Unexpected literal " + c + new String(tmpt), createLocation());
-                    }
-                    event = Event.VALUE_TRUE;
-                    break;
-                case FALSE_F:
-                    final char[] tmpf = read(4);
-                    if (tmpf[0] != FALSE_A || tmpf[1] != FALSE_L || tmpf[2] != FALSE_S || tmpf[3] != FALSE_E) {
-                        throw new JsonParsingException("Unexpected literal " + c + new String(tmpf), createLocation());
-                    }
+        // probe literals
+        switch (c) {
+            case TRUE_T:
+                final char[] tmpt = read(3);
+                if (tmpt[0] != TRUE_R || tmpt[1] != TRUE_U || tmpt[2] != TRUE_E) {
+                    throw new JsonParsingException("Unexpected literal " + c + new String(tmpt), createLocation());
+                }
+                event = Event.VALUE_TRUE;
+                break;
+            case FALSE_F:
+                final char[] tmpf = read(4);
+                if (tmpf[0] != FALSE_A || tmpf[1] != FALSE_L || tmpf[2] != FALSE_S || tmpf[3] != FALSE_E) {
+                    throw new JsonParsingException("Unexpected literal " + c + new String(tmpf), createLocation());
+                }
 
-                    event = Event.VALUE_FALSE;
-                    break;
-                case NULL_N:
-                    final char[] tmpn = read(3);
-                    if (tmpn[0] != NULL_U || tmpn[1] != NULL_L || tmpn[2] != NULL_L) {
-                        throw new JsonParsingException("Unexpected literal " + c + new String(tmpn), createLocation());
-                    }
-                    event = Event.VALUE_NULL;
-                    break;
+                event = Event.VALUE_FALSE;
+                break;
+            case NULL_N:
+                final char[] tmpn = read(3);
+                if (tmpn[0] != NULL_U || tmpn[1] != NULL_L || tmpn[2] != NULL_L) {
+                    throw new JsonParsingException("Unexpected literal " + c + new String(tmpn), createLocation());
+                }
+                event = Event.VALUE_NULL;
+                break;
 
-                default: // number
-                    appendValue(c);
-                  
-                    boolean dotpassed = false;
-                    boolean epassed = false;
-                    char last = c;
-                    int i = -1;
+            default: // number
+                appendValue(c);
 
-                    while (true) {
-                        i++;
+                boolean dotpassed = false;
+                boolean epassed = false;
+                char last = c;
 
-                        char n = read();
-                        //System.out.println(n);
-                        
-                        if (!isNumber(n)) {
-                            
-                            if(n== SPACE || n==TAB || n==CR) {
-                                
-                                n = readNextNonWhitespaceChar();
-                                
-                            }
-                            
+                while (true) {
 
-                            markCurrentChar();
-                            
-                            if (n == COMMA || n == END_ARRAY_CHAR || n == END_OBJECT_CHAR || n == EOL) {
-                                resetToLastMark();
+                    char n = read();
 
-                                isCurrentNumberIntegral = (!dotpassed && !epassed);
+                    if (!isNumber(n)) {
 
-                                if (isCurrentNumberIntegral && c == MINUS && i == 1 && last >= '0' && last <= '9') {
-                                    currentIntegralNumber = -(last - 48); //optimize -0 till -99
-                                }
+                        if (n == SPACE || n == TAB || n == CR) {
 
-                                if (isCurrentNumberIntegral && c != MINUS  && i == 0 && last >= '0' && last <= '9') {
-                                    currentIntegralNumber = (last - 48); //optimize 0 till 9
-                                }
+                            n = readNextNonWhitespaceChar();
 
-                                event = Event.VALUE_NUMBER;
-                                break;
-                            }else 
-                            {
-                                throw new JsonParsingException("unexpected character " + n + " (" + (int) n + ")", createLocation());
-                            }
-                            
-                            
-                            
-                        }
-                        
-                        //is one of 0-9 . e E - +
-
-                        // minus only allowed as first char or after e/E
-                        if (n == MINUS && i != 0 && last != EXP_LOWERCASE && last != EXP_UPPERCASE) {
-                            throw new JsonParsingException("unexpected character " + n, createLocation());
                         }
 
-                        // plus only allowed after e/E
-                        if (n == PLUS && last != EXP_LOWERCASE && last != EXP_UPPERCASE) {
-                            throw new JsonParsingException("unexpected character " + n, createLocation());
-                        }
+                        markCurrentChar();
 
-                        if (!dotpassed && c==ZERO && i == 0 && n != DOT) {
-                            throw new JsonParsingException("unexpected character " + n + " (no leading zeros allowed)", createLocation());
-                        }
+                        if (n == COMMA || n == END_ARRAY_CHAR || n == END_OBJECT_CHAR || n == EOL) {
+                            resetToLastMark();
 
-                        if (n == DOT) {
+                            isCurrentNumberIntegral = (!dotpassed && !epassed);
 
-                            if (dotpassed) {
-                                throw new JsonParsingException("more than one dot", createLocation());
+                            if (isCurrentNumberIntegral && c == MINUS && valueLength < 3 && last >= '0' && last <= '9') {
+
+                                currentIntegralNumber = -(last - 48); //optimize -0 till -9
                             }
 
-                            dotpassed = true;
+                            if (isCurrentNumberIntegral && c != MINUS && valueLength < 2 && last >= '0' && last <= '9') {
 
-                        }
-
-                        if (n == EXP_LOWERCASE || n == EXP_UPPERCASE) {
-
-                            if (epassed) {
-                                throw new JsonParsingException("more than one e/E", createLocation());
+                                currentIntegralNumber = (last - 48); //optimize 0 till 9
                             }
 
-                            epassed = true;
-                        }
+                            event = Event.VALUE_NUMBER;
 
-                        appendValue(n);
-                        last = n;
+                            break;
+                        } else {
+                            throw new JsonParsingException("unexpected character " + n + " (" + (int) n + ")", createLocation());
+                        }
 
                     }
 
-            }
+                    //is one of 0-9 . e E - +
+
+                    // minus only allowed as first char or after e/E
+                    if (n == MINUS && valueLength > 0 && last != EXP_LOWERCASE && last != EXP_UPPERCASE) {
+                        throw new JsonParsingException("unexpected character " + n, createLocation());
+                    }
+
+                    // plus only allowed after e/E
+                    if (n == PLUS && last != EXP_LOWERCASE && last != EXP_UPPERCASE) {
+                        throw new JsonParsingException("unexpected character " + n, createLocation());
+                    }
+
+                    if (!dotpassed && c == ZERO && valueLength > 0 && n != DOT) {
+                        throw new JsonParsingException("unexpected character " + n + " (no leading zeros allowed)", createLocation());
+                    }
+
+                    if (n == DOT) {
+
+                        if (dotpassed) {
+                            throw new JsonParsingException("more than one dot", createLocation());
+                        }
+
+                        if (epassed) {
+                            throw new JsonParsingException("no dot allowed here", createLocation());
+                        }
+
+                        dotpassed = true;
+
+                    }
+
+                    if (n == EXP_LOWERCASE || n == EXP_UPPERCASE) {
+
+                        if (epassed) {
+                            throw new JsonParsingException("more than one e/E", createLocation());
+                        }
+
+                        epassed = true;
+                    }
+
+                    appendValue(n);
+                    last = n;
+
+                }
+
+        }
 
     }
 
@@ -706,21 +707,11 @@ public class JsonStreamParserImpl_85_182_49_102 implements JsonChars, EscapedStr
 
     private static long parseLongFromChars(final char[] chars, final int start, final int end) {
 
-       /* if (chars == null || chars.length == 0 || start < 0 || end <= start || end > chars.length - 1 || start > chars.length - 1) {
-            throw new IllegalArgumentException();
-        }*/
-
         long retVal = 0;
         final boolean negative = chars[start] == MINUS;
         for (int i = negative ? start + 1 : start; i < end; i++) {
-
-            //int this context we know its an integral number, so skip this due to perf reasons
-            /*if (chars[i] < ZERO || chars[i] > NINE) {
-                throw new IllegalArgumentException("Not a integral number");
-            }*/
             retVal = retVal * 10 + (chars[i] - ZERO);
         }
-
         return negative ? -retVal : retVal;
     }
 

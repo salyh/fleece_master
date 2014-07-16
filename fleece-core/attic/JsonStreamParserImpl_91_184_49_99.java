@@ -58,8 +58,8 @@ public class JsonStreamParserImpl_91_184_49_99 implements JsonChars, EscapedStri
     private int openObjects = 0;
     private int openArrays = 0;
 
-    public JsonStreamParserImpl_91_184_49_99(final Reader reader, final int maxStringLength, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final BufferStrategy.BufferProvider<char[]> valueBuffer) {
+    public JsonStreamParserImpl_91_184_49_99(final Reader reader, final int maxStringLength,
+            final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer) {
 
         this.maxStringSize = maxStringLength <= 0 ? 8192 : maxStringLength;
         this.currentValue = valueBuffer.newBuffer();

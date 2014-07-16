@@ -27,8 +27,14 @@ import java.math.BigDecimal;
 import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParsingException;
 
-public class JsonStreamParserImpl_89_184_47_104 implements JsonChars, EscapedStringAwareJsonParser {
-    
+public class JsonStreamParserImpl_83_172_48_96 implements JsonChars, EscapedStringAwareJsonParser {
+
+    /*Benchmark                                                       Mode   Samples        Score  Score error    Units
+    o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3       83,727       11,983    ops/s
+    o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      172,054       10,062    ops/s
+    o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       48,023       20,011    ops/s
+    o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3       96,448       21,175    ops/s*/
+
     private final char[] buffer;
     private final Reader in;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
@@ -58,8 +64,8 @@ public class JsonStreamParserImpl_89_184_47_104 implements JsonChars, EscapedStr
     private int openObjects = 0;
     private int openArrays = 0;
 
-    public JsonStreamParserImpl_89_184_47_104(final Reader reader, final int maxStringLength, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final BufferStrategy.BufferProvider<char[]> valueBuffer) {
+    public JsonStreamParserImpl_83_172_48_96(final Reader reader, final int maxStringLength,
+            final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer) {
 
         this.maxStringSize = maxStringLength <= 0 ? 8192 : maxStringLength;
         this.currentValue = valueBuffer.newBuffer();
@@ -234,9 +240,15 @@ public class JsonStreamParserImpl_89_184_47_104 implements JsonChars, EscapedStr
     public final Event next() {
 
         event = null;
-        if(isCurrentNumberIntegral) isCurrentNumberIntegral = false;
-        if(currentBigDecimalNumber !=null) currentBigDecimalNumber = null;
-        if(currentIntegralNumber != null)currentIntegralNumber = null;
+        if (isCurrentNumberIntegral) {
+            isCurrentNumberIntegral = false;
+        }
+        if (currentBigDecimalNumber != null) {
+            currentBigDecimalNumber = null;
+        }
+        if (currentIntegralNumber != null) {
+            currentIntegralNumber = null;
+        }
 
         resetValue();
 
@@ -476,8 +488,6 @@ public class JsonStreamParserImpl_89_184_47_104 implements JsonChars, EscapedStr
         }
 
     }
-    
-
 
     private void handleLiteral(final char c) {
         if (lastSignificantChar >= 0 && lastSignificantChar != KEY_SEPARATOR && lastSignificantChar != COMMA
@@ -488,7 +498,7 @@ public class JsonStreamParserImpl_89_184_47_104 implements JsonChars, EscapedStr
 
         lastSignificantChar = -2;
 
-     
+        if (lastSignificantChar != QUOTE) {
             // probe literals
             switch (c) {
                 case TRUE_T:
@@ -516,62 +526,59 @@ public class JsonStreamParserImpl_89_184_47_104 implements JsonChars, EscapedStr
 
                 default: // number
                     appendValue(c);
-                  
+
+                    boolean endExpected = false;
+                    final boolean zeropassed = c == '0';
+                    final boolean beginningMinusPassed = c == '-';
                     boolean dotpassed = false;
                     boolean epassed = false;
                     char last = c;
-                   
+                    int i = -1;
 
                     while (true) {
-                        
+                        i++;
 
-                        char n = read();
-                       
-                        
-                        if (!isNumber(n)) {
-                            
-                            if(n== SPACE || n==TAB || n==CR) {
-                                
-                                n = readNextNonWhitespaceChar();
-                
+                        final char n = read();
+                        markCurrentChar();
+
+                        if (n == COMMA || n == END_ARRAY_CHAR || n == END_OBJECT_CHAR) {
+                            resetToLastMark();
+
+                            isCurrentNumberIntegral = (!dotpassed && !epassed);
+
+                            if (isCurrentNumberIntegral && beginningMinusPassed && i == 1 && last >= '0' && last <= '9') {
+                                currentIntegralNumber = -(last - 48); //optimize -0 till -99
                             }
-                            
 
-                            markCurrentChar();
-                            
-                            if (n == COMMA || n == END_ARRAY_CHAR || n == END_OBJECT_CHAR || n == EOL) {
-                                resetToLastMark();
-
-                                isCurrentNumberIntegral = (!dotpassed && !epassed);
-
-                                if (isCurrentNumberIntegral && c == MINUS && valueLength < 3 && last >= '0' && last <= '9') {
-                       
-                                    currentIntegralNumber = -(last - 48); //optimize -0 till -9
-                                }
-
-                                if (isCurrentNumberIntegral && c != MINUS  && valueLength < 2 && last >= '0' && last <= '9') {
-                                    
-                                    currentIntegralNumber = (last - 48); //optimize 0 till 9
-                                }
-
-                                event = Event.VALUE_NUMBER;
-                     
-                                break;
-                            }else 
-                            {
-                                throw new JsonParsingException("unexpected character " + n + " (" + (int) n + ")", createLocation());
+                            if (isCurrentNumberIntegral && !beginningMinusPassed && i == 0 && last >= '0' && last <= '9') {
+                                currentIntegralNumber = (last - 48); //optimize 0 till 9
                             }
-                            
-                            
-                            
+
+                            event = Event.VALUE_NUMBER;
+                            break;
                         }
-                        
-                    
-                        
-                        //is one of 0-9 . e E - +
+
+                        if (n == EOL) {
+                            last = n;
+                            continue;
+                        }
+
+                        if (endExpected && n != SPACE && n != TAB && n != CR) {
+                            throw new JsonParsingException("unexpected character " + n + " (" + (int) n + ")", createLocation());
+                        }
+
+                        if (n == SPACE || n == TAB || n == CR) {
+                            endExpected = true;
+                            last = n;
+                            continue;
+                        }
+
+                        if (!isNumber(n)) {
+                            throw new JsonParsingException("unexpected character " + n, createLocation());
+                        }
 
                         // minus only allowed as first char or after e/E
-                        if (n == MINUS && valueLength > 0 && last != EXP_LOWERCASE && last != EXP_UPPERCASE) {
+                        if (n == MINUS && i != 0 && last != EXP_LOWERCASE && last != EXP_UPPERCASE) {
                             throw new JsonParsingException("unexpected character " + n, createLocation());
                         }
 
@@ -580,7 +587,7 @@ public class JsonStreamParserImpl_89_184_47_104 implements JsonChars, EscapedStr
                             throw new JsonParsingException("unexpected character " + n, createLocation());
                         }
 
-                        if (!dotpassed && c==ZERO && valueLength > 0  && n != DOT) {
+                        if (!dotpassed && zeropassed && i == 0 && n != DOT) {
                             throw new JsonParsingException("unexpected character " + n + " (no leading zeros allowed)", createLocation());
                         }
 
@@ -588,10 +595,6 @@ public class JsonStreamParserImpl_89_184_47_104 implements JsonChars, EscapedStr
 
                             if (dotpassed) {
                                 throw new JsonParsingException("more than one dot", createLocation());
-                            }
-                            
-                            if (epassed) {
-                                throw new JsonParsingException("no dot allowed here", createLocation());
                             }
 
                             dotpassed = true;
@@ -609,11 +612,16 @@ public class JsonStreamParserImpl_89_184_47_104 implements JsonChars, EscapedStr
 
                         appendValue(n);
                         last = n;
-                       
 
                     }
 
+                    break;
+
             }
+
+        } else {
+            throw new JsonParsingException("Unexpected character " + c, createLocation());
+        }
 
     }
 
@@ -714,11 +722,21 @@ public class JsonStreamParserImpl_89_184_47_104 implements JsonChars, EscapedStr
 
     private static long parseLongFromChars(final char[] chars, final int start, final int end) {
 
+        /* if (chars == null || chars.length == 0 || start < 0 || end <= start || end > chars.length - 1 || start > chars.length - 1) {
+             throw new IllegalArgumentException();
+         }*/
+
         long retVal = 0;
         final boolean negative = chars[start] == MINUS;
         for (int i = negative ? start + 1 : start; i < end; i++) {
-           retVal = retVal * 10 + (chars[i] - ZERO);
+
+            //int this context we know its an integral number, so skip this due to perf reasons
+            /*if (chars[i] < ZERO || chars[i] > NINE) {
+                throw new IllegalArgumentException("Not a integral number");
+            }*/
+            retVal = retVal * 10 + (chars[i] - ZERO);
         }
+
         return negative ? -retVal : retVal;
     }
 

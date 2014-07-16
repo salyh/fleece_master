@@ -27,14 +27,14 @@ import java.math.BigDecimal;
 import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParsingException;
 
-public class JsonStreamParserImpl_83_172_48_96 implements JsonChars, EscapedStringAwareJsonParser {
+public class JsonStreamParserImpl_81_169_47_98 implements JsonChars, EscapedStringAwareJsonParser {
 
-    /*Benchmark                                                       Mode   Samples        Score  Score error    Units
-    o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3       83,727       11,983    ops/s
-    o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      172,054       10,062    ops/s
-    o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       48,023       20,011    ops/s
-    o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3       96,448       21,175    ops/s*/
-    
+    /* Benchmark                                                       Mode   Samples        Score  Score error    Units
+     o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3       81,047        8,224    ops/s
+     o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      169,366       22,415    ops/s
+     o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       47,423       11,696    ops/s
+     o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3       98,575       19,212    ops/s*/
+
     private final char[] buffer;
     private final Reader in;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
@@ -64,8 +64,8 @@ public class JsonStreamParserImpl_83_172_48_96 implements JsonChars, EscapedStri
     private int openObjects = 0;
     private int openArrays = 0;
 
-    public JsonStreamParserImpl_83_172_48_96(final Reader reader, final int maxStringLength, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final BufferStrategy.BufferProvider<char[]> valueBuffer) {
+    public JsonStreamParserImpl_81_169_47_98(final Reader reader, final int maxStringLength,
+            final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer) {
 
         this.maxStringSize = maxStringLength <= 0 ? 8192 : maxStringLength;
         this.currentValue = valueBuffer.newBuffer();
@@ -96,7 +96,7 @@ public class JsonStreamParserImpl_83_172_48_96 implements JsonChars, EscapedStri
 
     @Override
     public final boolean hasNext() {
-        return !(openObjects == 0 && openArrays == 0) || event == null;
+        return event == null || !(openArrays == 0 && openObjects == 0);
     }
 
     private static boolean isAsciiDigit(final char value) {
@@ -240,9 +240,9 @@ public class JsonStreamParserImpl_83_172_48_96 implements JsonChars, EscapedStri
     public final Event next() {
 
         event = null;
-        if(isCurrentNumberIntegral) isCurrentNumberIntegral = false;
-        if(currentBigDecimalNumber !=null) currentBigDecimalNumber = null;
-        if(currentIntegralNumber != null)currentIntegralNumber = null;
+        isCurrentNumberIntegral = false;
+        currentBigDecimalNumber = null;
+        currentIntegralNumber = null;
 
         resetValue();
 
@@ -716,9 +716,9 @@ public class JsonStreamParserImpl_83_172_48_96 implements JsonChars, EscapedStri
 
     private static long parseLongFromChars(final char[] chars, final int start, final int end) {
 
-       /* if (chars == null || chars.length == 0 || start < 0 || end <= start || end > chars.length - 1 || start > chars.length - 1) {
+        if (chars == null || chars.length == 0 || start < 0 || end <= start || end > chars.length - 1 || start > chars.length - 1) {
             throw new IllegalArgumentException();
-        }*/
+        }
 
         long retVal = 0;
         final boolean negative = chars[start] == MINUS;
