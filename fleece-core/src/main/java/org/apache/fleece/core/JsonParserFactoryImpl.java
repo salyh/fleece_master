@@ -73,17 +73,17 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
         return Integer.parseInt(maxStringSize.toString());
     }
 
-    private JsonCharBufferStreamParser getDefaultJsonParserImpl(final InputStream in) {
-        return new JsonCharBufferStreamParser(
+    private EscapedStringAwareJsonParser getDefaultJsonParserImpl(final InputStream in) {
+        return new JsonStreamParserImpl(
             new InputStreamReader(in, Charset.defaultCharset()), maxSize, bufferProvider, valueBufferProvider);
     }
 
-    private JsonCharBufferStreamParser getDefaultJsonParserImpl(final InputStream in, final Charset charset) {
-        return new JsonCharBufferStreamParser(new InputStreamReader(in, charset), maxSize, bufferProvider, valueBufferProvider);
+    private EscapedStringAwareJsonParser getDefaultJsonParserImpl(final InputStream in, final Charset charset) {
+        return new JsonStreamParserImpl(new InputStreamReader(in, charset), maxSize, bufferProvider, valueBufferProvider);
     }
 
-    private JsonCharBufferStreamParser getDefaultJsonParserImpl(final Reader in) {
-        return new JsonCharBufferStreamParser(in, maxSize, bufferProvider, valueBufferProvider);
+    private EscapedStringAwareJsonParser getDefaultJsonParserImpl(final Reader in) {
+        return new JsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider);
     }
 
     @Override

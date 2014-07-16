@@ -25,10 +25,21 @@ public interface JsonChars {
     char END_OBJECT_CHAR = '}';
     char START_ARRAY_CHAR = '[';
     char END_ARRAY_CHAR = ']';
-    char EOL = '\n';
+    char QUOTE = '"';
     char COMMA = ',';
-    char SPACE = ' ';
     char KEY_SEPARATOR = ':';
+    
+    int I_START_OBJECT_CHAR = (int) START_OBJECT_CHAR;
+    int I_END_OBJECT_CHAR = (int) END_OBJECT_CHAR ;
+    int I_START_ARRAY_CHAR = (int) START_ARRAY_CHAR;
+    int I_END_ARRAY_CHAR  = (int) END_ARRAY_CHAR ;
+    int I_QUOTE = (int) QUOTE;
+    int I_COMMA = (int) COMMA;
+    int I_KEY_SEPARATOR = (int) KEY_SEPARATOR;
+    
+    char EOL = '\n';
+    char SPACE = ' ';
+    
     char TRUE_T = 't';
     char TRUE_R = 'r';
     char TRUE_U = 'u';
@@ -41,7 +52,7 @@ public interface JsonChars {
     char NULL_N = 'n';
     char NULL_U = 'u';
     char NULL_L = 'l';
-    char QUOTE = '"';
+ 
     char ZERO = '0';
     char NINE = '9';
     char DOT = '.';
