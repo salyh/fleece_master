@@ -85,7 +85,15 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     @Override
     public final boolean hasNext() {
-        return !(openObjects == 0 && openArrays == 0) || event == null;
+        boolean hasNext = !(openObjects == 0 && openArrays == 0) || event == null;
+        
+        if(!hasNext)
+        {
+            //check buffer for trailing garbage
+            
+        }
+        
+        return hasNext;
     }
 
     private static boolean isAsciiDigit(final char value) {
@@ -104,7 +112,26 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
         return new JsonLocationImpl(line, column, offset);
     }
 
-    protected int readNextChar() {
+
+        
+    protected void markCurrentChar() {
+        mark = buffer[pointer];
+    }
+
+    protected void resetToLastMark() {
+        reset = true;
+        offset--;
+
+        if(mark == EOL){
+            line--;
+            column=-1; //we dont have this info
+        }
+
+    }
+
+    private char read() {
+        
+
         if (reset) {
             reset = false;
             return mark;
@@ -115,7 +142,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
                 final int avail = in.read(buffer, 0, buffer.length);
 
                 if (avail <= 0) {
-                    return -1;
+                    throw new JsonParsingException("eof", createLocation());
                 }
 
             } catch (final Exception e) {
@@ -130,29 +157,8 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             pointer++;
         }
 
-        return buffer[pointer];
+        final char c= buffer[pointer];
 
-    }
-
-    protected void markCurrentChar() {
-        mark = buffer[pointer];
-    }
-
-    protected void resetToLastMark() {
-        reset = true;
-        offset--;
-        column--;
-    }
-
-    private char read() {
-        final int c = readNextChar();
-
-        if (c == -1) {
-
-            //TODO
-            throw new JsonParsingException("eof", createLocation());
-            //NoSuchElementException();
-        }
 
         offset++;
         column++;
@@ -199,6 +205,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
             if (c == EOL) {
                 line++;
+                column=0;
             } else {
 
                 if (dosCount >= maxStringSize) {
@@ -253,28 +260,28 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
             case START_OBJECT_CHAR:
 
-                handleStartObject(c);
+                handleStartObject();
 
                 break;
 
             case END_OBJECT_CHAR:
 
-                handleEndObject(c);
+                handleEndObject();
 
                 break;
             case START_ARRAY_CHAR:
 
-                handleStartArray(c);
+                handleStartArray();
 
                 break;
             case END_ARRAY_CHAR:
 
-                handleEndArray(c);
+                handleEndArray();
                 break;
 
             case QUOTE: // must be escaped within a value
 
-                handleQuote(c);
+                handleQuote();
 
                 break;
 
@@ -314,63 +321,63 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     }
 
-    private void handleStartObject(final char c) {
+    private void handleStartObject() {
 
         if (lastSignificantChar == -2
                 || (lastSignificantChar != -1 && lastSignificantChar != I_KEY_SEPARATOR && lastSignificantChar != I_COMMA && lastSignificantChar != I_START_ARRAY_CHAR)) {
-            throw new JsonParsingException("Unexpected character " + c + " (last significant was " + lastSignificantChar + ")",
+            throw new JsonParsingException("Unexpected character " + START_OBJECT_CHAR + " (last significant was " + lastSignificantChar + ")",
                     createLocation());
         }
 
-        lastSignificantChar = c;
+        lastSignificantChar = START_OBJECT_CHAR;
         openObjects++;
         event = Event.START_OBJECT;
 
     }
 
-    private void handleEndObject(final char c) {
+    private void handleEndObject() {
 
         if (lastSignificantChar >= 0 && lastSignificantChar != I_START_OBJECT_CHAR && lastSignificantChar != I_END_ARRAY_CHAR
                 && lastSignificantChar != I_QUOTE && lastSignificantChar != I_END_OBJECT_CHAR) {
-            throw new JsonParsingException("Unexpected character " + c + " (last significant was " + lastSignificantChar + ")",
+            throw new JsonParsingException("Unexpected character " + END_OBJECT_CHAR + " (last significant was " + lastSignificantChar + ")",
                     createLocation());
         }
 
         if (openObjects == 0) {
-            throw new JsonParsingException("Unexpected character " + c, createLocation());
+            throw new JsonParsingException("Unexpected character " + END_OBJECT_CHAR, createLocation());
         }
 
-        lastSignificantChar = c;
+        lastSignificantChar = END_OBJECT_CHAR;
         openObjects--;
         event = Event.END_OBJECT;
     }
 
-    private void handleStartArray(final char c) {
+    private void handleStartArray() {
 
         if (lastSignificantChar == -2
                 || (lastSignificantChar != -1 && lastSignificantChar != I_KEY_SEPARATOR && lastSignificantChar != I_COMMA && lastSignificantChar != I_START_ARRAY_CHAR)) {
-            throw new JsonParsingException("Unexpected character " + c + " (last significant was " + lastSignificantChar + ")",
+            throw new JsonParsingException("Unexpected character " + START_ARRAY_CHAR + " (last significant was " + lastSignificantChar + ")",
                     createLocation());
         }
 
-        lastSignificantChar = c;
+        lastSignificantChar = START_ARRAY_CHAR;
         openArrays++;
         event = Event.START_ARRAY;
     }
 
-    private void handleEndArray(final char c) {
+    private void handleEndArray() {
 
         if (lastSignificantChar >= 0 && lastSignificantChar != I_START_ARRAY_CHAR && lastSignificantChar != I_END_ARRAY_CHAR
                 && lastSignificantChar != I_END_OBJECT_CHAR && lastSignificantChar != I_QUOTE) {
-            throw new JsonParsingException("Unexpected character " + c + " (last significant was " + lastSignificantChar + ")",
+            throw new JsonParsingException("Unexpected character " + END_ARRAY_CHAR + " (last significant was " + lastSignificantChar + ")",
                     createLocation());
         }
 
         if (openArrays == 0) {
-            throw new JsonParsingException("Unexpected character " + c, createLocation());
+            throw new JsonParsingException("Unexpected character " + END_ARRAY_CHAR, createLocation());
         }
 
-        lastSignificantChar = c;
+        lastSignificantChar = END_ARRAY_CHAR;
         openArrays--;
 
         event = Event.END_ARRAY;
@@ -425,21 +432,21 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     }
 
-    private void handleQuote(final char c) {
+    private void handleQuote() {
 
         if (lastSignificantChar >= 0 && lastSignificantChar != I_KEY_SEPARATOR && lastSignificantChar != I_START_OBJECT_CHAR
                 && lastSignificantChar != I_START_ARRAY_CHAR && lastSignificantChar != I_COMMA) {
-            throw new JsonParsingException("Unexpected character " + c + " (last significant was " + lastSignificantChar + ")",
+            throw new JsonParsingException("Unexpected character " + QUOTE + " (last significant was " + lastSignificantChar + ")",
                     createLocation());
         }
 
         if (openObjects == 0 && openArrays ==0)  {
-            throw new JsonParsingException("Unexpected character " + c, createLocation());
+            throw new JsonParsingException("Unexpected character " + QUOTE, createLocation());
         }
         
         //always the beginning quote of a key or value
 
-        lastSignificantChar = c;
+        lastSignificantChar = QUOTE;
 
         readString();
         final char n = readNextNonWhitespaceChar();
@@ -465,7 +472,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
                     createLocation());
         }
 
-        if (openObjects == 0 && openArrays ==0)  {
+        if (openObjects == 0 && openArrays == 0)  {
             throw new JsonParsingException("Unexpected character " + c, createLocation());
         }
         
@@ -518,6 +525,12 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
                         markCurrentChar();
 
                         if (n == COMMA || n == END_ARRAY_CHAR || n == END_OBJECT_CHAR || n == EOL) {
+                            
+                            if(last == EXP_LOWERCASE || last == EXP_UPPERCASE || last == MINUS || last == PLUS || last == DOT) {
+                                throw new JsonParsingException("unexpected character " + n + " (" + (int) n + ")", createLocation());
+                            }
+                            
+                            
                             resetToLastMark();
 
                             isCurrentNumberIntegral = (!dotpassed && !epassed);
@@ -585,6 +598,9 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
                 }
 
+                
+               
+                
         }
 
     }
