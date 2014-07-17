@@ -21,6 +21,8 @@ package org.apache.fleece.core;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import javax.json.stream.JsonParsingException;
+
 public class Strings implements JsonChars {
     private static final BufferStrategy.BufferProvider<StringBuilder> BUILDER_CACHE =
         BufferStrategy.valueOf(System.getProperty("fleece.string-builder.strategy", "QUEUE"))
@@ -44,10 +46,14 @@ public class Strings implements JsonChars {
                 return '\n';
             case '"':
                 return '\"';
+            case '\\':
+                return '\\';  
+            case '/':
+                return '/';  
             default:
-                // no-op
+                throw new JsonParsingException("Invalid escape sequence "+current,new JsonLocationImpl(-1, -1, -1));
         }
-        return current;
+
     }
 
     public static String escape(final String value) {
