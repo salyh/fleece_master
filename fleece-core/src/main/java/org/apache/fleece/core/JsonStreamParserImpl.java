@@ -237,12 +237,16 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             case COMMA:
 
                 //lastSignificantChar must one of the following: " ] }
-                if (lastSignificantChar >= 0 && lastSignificantChar != I_QUOTE && lastSignificantChar != I_END_ARRAY_CHAR
+                if (lastSignificantChar !=- 2  && lastSignificantChar != I_QUOTE && lastSignificantChar != I_END_ARRAY_CHAR
                         && lastSignificantChar != I_END_OBJECT_CHAR) {
                     throw new JsonParsingException("Unexpected character " + c + " (last significant was " + lastSignificantChar + ")",
                             createLocation());
                 }
 
+                if (openObjects == 0 && openArrays ==0)  {
+                    throw new JsonParsingException("Unexpected character " + c, createLocation());
+                }
+                
                 lastSignificantChar = c;
 
                 return next();
@@ -305,10 +309,8 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
         }
 
-        //System.out.println(" --> "+event+" ->'"+getValue()+"'");
+        
         return event;
-
-        //throw new JsonParsingException("Unexpected character " + c, createLocation());
 
     }
 
@@ -431,6 +433,10 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
                     createLocation());
         }
 
+        if (openObjects == 0 && openArrays ==0)  {
+            throw new JsonParsingException("Unexpected character " + c, createLocation());
+        }
+        
         //always the beginning quote of a key or value
 
         lastSignificantChar = c;
@@ -459,6 +465,10 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
                     createLocation());
         }
 
+        if (openObjects == 0 && openArrays ==0)  {
+            throw new JsonParsingException("Unexpected character " + c, createLocation());
+        }
+        
         lastSignificantChar = -2;
 
         // probe literals

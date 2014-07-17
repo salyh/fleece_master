@@ -886,4 +886,65 @@ public class JsonParserTest {
         Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail25.json")).read();
     }
     
+    @Test(expected = JsonParsingException.class)
+    public void fail26() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail26.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail27() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail27.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail28() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail28.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail29() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail29.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail30() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail30.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail31() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail31.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail32() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail32.json")).read();
+    }
+    
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail33() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail33.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail34() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail34.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail35() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail35.json")).read();
+    }
+    
 }
