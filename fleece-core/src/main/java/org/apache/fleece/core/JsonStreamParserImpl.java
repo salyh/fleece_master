@@ -18,6 +18,14 @@
  */
 package org.apache.fleece.core;
 
+/*
+ * Benchmark                                                       Mode   Samples        Score  Score error    Units
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3       81,120        2,754    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      161,820        7,520    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       47,277        4,318    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3       92,759       29,026    ops/s
+ */
+
 import static org.apache.fleece.core.Strings.asEscapedChar;
 
 import java.io.IOException;
@@ -76,8 +84,8 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             throw new JsonParsingException("to many chars", createLocation());
         }
 
-        currentValue[valueLength] = c;
-        valueLength++;
+        currentValue[valueLength++] = c;
+ 
     }
 
     private String getValue() {
@@ -175,14 +183,14 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             pointer++;
         }
 
-        final char c = buffer[pointer];
+     
 
         offset++;
         column++;
 
         //System.out.println(c+" ("+(int)c+") on offset "+offset+" on pointer "+pointer+ " avail "+avail);
 
-        return c;
+        return buffer[pointer];
     }
 
     // Event.START_ARRAY
@@ -551,7 +559,9 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
                             if (last == EXP_LOWERCASE || last == EXP_UPPERCASE || last == MINUS || last == PLUS || last == DOT) {
                                 throw new JsonParsingException("unexpected character " + n + " (" + (int) n + ")", createLocation());
-                            }
+                            } else {
+                                
+                            
 
                             resetToLastMark();
 
@@ -560,9 +570,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
                             if (isCurrentNumberIntegral && c == MINUS && valueLength < 3 && last >= '0' && last <= '9') {
 
                                 currentIntegralNumber = -(last - 48); //optimize -0 till -9
-                            }
-
-                            if (isCurrentNumberIntegral && c != MINUS && valueLength < 2 && last >= '0' && last <= '9') {
+                            } else if (isCurrentNumberIntegral && c != MINUS && valueLength < 2 && last >= '0' && last <= '9') {
 
                                 currentIntegralNumber = (last - 48); //optimize 0 till 9
                             }
@@ -570,6 +578,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
                             event = Event.VALUE_NUMBER;
 
                             break;
+                            }
                         } else {
                             throw new JsonParsingException("unexpected character " + n + " (" + (int) n + ")", createLocation());
                         }
@@ -581,20 +590,16 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
                     // minus only allowed as first char or after e/E
                     if (n == MINUS && valueLength > 0 && last != EXP_LOWERCASE && last != EXP_UPPERCASE) {
                         throw new JsonParsingException("unexpected character " + n, createLocation());
-                    }
-
-                    // plus only allowed after e/E
-                    if (n == PLUS && last != EXP_LOWERCASE && last != EXP_UPPERCASE) {
+                    } else if (n == PLUS && last != EXP_LOWERCASE && last != EXP_UPPERCASE) {
+                     // plus only allowed after e/E
                         throw new JsonParsingException("unexpected character " + n, createLocation());
                     }
 
                     //positive numbers
                     if (!dotpassed && c == ZERO && valueLength > 0 && n != DOT) {
                         throw new JsonParsingException("unexpected character " + n + " (no leading zeros allowed)", createLocation());
-                    }
-
-                    //negative numbers
-                    if (!dotpassed && c == MINUS && last == ZERO && n != DOT && valueLength <= 2) {
+                    } else  if (!dotpassed && c == MINUS && last == ZERO && n != DOT && valueLength <= 2) {
+                      //negative numbers
                         throw new JsonParsingException("unexpected character " + n + " (no leading zeros allowed) ", createLocation());
                     }
 
@@ -610,9 +615,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
                         dotpassed = true;
 
-                    }
-
-                    if (n == EXP_LOWERCASE || n == EXP_UPPERCASE) {
+                    } else if (n == EXP_LOWERCASE || n == EXP_UPPERCASE) {
 
                         if (epassed) {
                             throw new JsonParsingException("more than one e/E", createLocation());
@@ -638,8 +641,9 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
     public String getString() {
         if (event == Event.KEY_NAME || event == Event.VALUE_STRING || event == Event.VALUE_NUMBER) {
             return getValue();
+        } else {
+            throw new IllegalStateException(event + " doesn't support getString()");
         }
-        throw new IllegalStateException(event + " doesn't support getString()");
     }
 
     @Override
@@ -647,66 +651,59 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
         if (event != Event.VALUE_NUMBER) {
             throw new IllegalStateException(event + " doesn't support isIntegralNumber()");
-        }
-
+        } else {
         return isCurrentNumberIntegral;
+        }
     }
 
     @Override
     public int getInt() {
         if (event != Event.VALUE_NUMBER) {
             throw new IllegalStateException(event + " doesn't support getInt()");
-        }
-
-        if (isCurrentNumberIntegral && currentIntegralNumber != null) {
+        } else if (isCurrentNumberIntegral && currentIntegralNumber != null) {
             return currentIntegralNumber;
-        }
-
-        if (isCurrentNumberIntegral) {
+        } else if (isCurrentNumberIntegral) {
             final Integer retVal = parseIntegerFromChars(currentValue, 0, valueLength);
             if (retVal == null) {
                 return getBigDecimal().intValue();
             } else {
-                retVal.intValue();
+                return retVal.intValue();
             }
+        } else {
+            return getBigDecimal().intValue();
         }
-
-        return getBigDecimal().intValue();
     }
 
     @Override
     public long getLong() {
         if (event != Event.VALUE_NUMBER) {
             throw new IllegalStateException(event + " doesn't support getLong()");
-        }
-
-        if (isCurrentNumberIntegral && currentIntegralNumber != null) {
+        } else if (isCurrentNumberIntegral && currentIntegralNumber != null) {
             return currentIntegralNumber;
-        } // int is ok, its only from 0-9
-
-        if (isCurrentNumberIntegral) {
+        } else if (isCurrentNumberIntegral) {
             final Long retVal = parseLongFromChars(currentValue, 0, valueLength);
             if (retVal == null) {
                 return getBigDecimal().longValue();
             } else {
-                retVal.longValue();
+                return retVal.longValue();
             }
+        } else {
+            return getBigDecimal().longValue();
         }
 
-        return getBigDecimal().longValue();
+        
     }
 
     @Override
     public BigDecimal getBigDecimal() {
         if (event != Event.VALUE_NUMBER) {
             throw new IllegalStateException(event + " doesn't support getBigDecimal()");
-        }
-
-        if (currentBigDecimalNumber != null) {
+        } else if (currentBigDecimalNumber != null) {
             return currentBigDecimalNumber;
+        } else {
+            return (currentBigDecimalNumber = new BigDecimal(currentValue, 0, valueLength));
         }
-
-        return (currentBigDecimalNumber = new BigDecimal(currentValue, 0, valueLength));
+        
     }
 
     @Override
