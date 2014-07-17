@@ -49,14 +49,22 @@ public class JsonReaderImpl implements JsonReader {
             case START_OBJECT:
                 final JsonReaderListener subObject = listenerFactory.subObject();
                 parseObject(subObject);
+                if (parser.hasNext()) {
+                    throw new JsonParsingException("Nothing to read", new JsonLocationImpl(1, 1, 0));
+                }
                 return JsonObject.class.cast(subObject.getObject());
             case START_ARRAY:
                 final JsonReaderListener subArray = listenerFactory.subArray();
                 parseArray(subArray);
+                if (parser.hasNext()) {
+                    throw new JsonParsingException("Nothing to read", new JsonLocationImpl(1, 1, 0));
+                }
                 return JsonArray.class.cast(subArray.getObject());
             default:
                 throw new JsonParsingException("Unknown structure: " + parser.next(), parser.getLocation());
         }
+        
+        
     }
 
     @Override
