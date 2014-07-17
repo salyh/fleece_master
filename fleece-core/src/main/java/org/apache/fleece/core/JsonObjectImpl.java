@@ -59,10 +59,6 @@ public final class JsonObjectImpl extends LinkedHashMap<String, JsonValue> imple
         super(m);
     }
 
-    public JsonObjectImpl(JsonObject jsonObject, String key, JsonValue value) {
-        super(jsonObject);
-        super.put(key, value);
-    }
 
 
     @Override

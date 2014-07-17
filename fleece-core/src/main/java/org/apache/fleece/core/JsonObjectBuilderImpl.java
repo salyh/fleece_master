@@ -22,81 +22,84 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
 
 public class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
-    private JsonObjectImpl delegate = new JsonObjectImpl();
+    private Map<String, JsonValue> inner = new HashMap<String, JsonValue>();
 
     @Override
     public JsonObjectBuilder add(final String name, final JsonValue value) {
-        delegate = new JsonObjectImpl(delegate, name, value);
+        inner.put(name, value);
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final String value) {
-        delegate = new JsonObjectImpl(delegate, name, new JsonStringImpl(value));
+        inner.put( name, new JsonStringImpl(value));
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final BigInteger value) {
-        delegate = new JsonObjectImpl(delegate, name,  new JsonNumberImpl(new BigDecimal(value)));
+        inner.put( name,  new JsonNumberImpl(new BigDecimal(value)));
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final BigDecimal value) {
-        delegate = new JsonObjectImpl(delegate, name,  new JsonNumberImpl(value));
+        inner.put( name,  new JsonNumberImpl(value));
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final int value) {
-        delegate = new JsonObjectImpl(delegate, name,  new JsonLongImpl(value));
+        inner.put(name,  new JsonLongImpl(value));
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final long value) {
-        delegate = new JsonObjectImpl(delegate, name,  new JsonLongImpl(value));
+        inner.put( name,  new JsonLongImpl(value));
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final double value) {
-        delegate = new JsonObjectImpl(delegate, name, new JsonDoubleImpl(value));
+        inner.put( name, new JsonDoubleImpl(value));
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final boolean value) {
-        delegate = new JsonObjectImpl(delegate, name,  value ? JsonValue.TRUE : JsonValue.FALSE);
+        inner.put(name,  value ? JsonValue.TRUE : JsonValue.FALSE);
         return this;
     }
 
     @Override
     public JsonObjectBuilder addNull(final String name) {
-        delegate = new JsonObjectImpl(delegate, name,  JsonValue.NULL);
+        inner.put(name,  JsonValue.NULL);
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final JsonObjectBuilder builder) {
-        delegate = new JsonObjectImpl(delegate, name,  builder.build());
+        inner.put( name,  builder.build());
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final JsonArrayBuilder builder) {
-        delegate = new JsonObjectImpl(delegate, name,  builder.build());
+        inner.put( name,  builder.build());
         return this;
     }
 
     @Override
     public JsonObject build() {
-        return delegate;
+        return new JsonObjectImpl(inner);
     }
 }

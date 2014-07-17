@@ -18,7 +18,9 @@
  */
 package org.apache.fleece.core;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.ListIterator;
 
 import javax.json.JsonArray;
@@ -92,4 +94,43 @@ public class JsonArrayImplTest {
         it.remove();
 
     }
+    
+    //@Test
+    public void volatileHashcode() throws Exception{
+        final JsonArray array = new JsonArrayImpl(new JsonStringImpl("a"),new JsonStringImpl("b"));
+        final List<Integer> hashs = (new ArrayList<Integer>());
+       
+        Runnable r = new Runnable() {
+            
+            @Override
+            public void run() {
+                
+                hashs.add(array.hashCode());
+                
+                
+                
+                
+            }
+        };
+        
+        for(int i=0; i< 10;i++)
+        {
+            Thread t1 = new Thread(r);
+            Thread t2 = new Thread(r);
+            Thread t3 = new Thread(r);
+            t1.start();
+            t2.start();
+            t3.start();
+        }
+   
+        
+        Thread.sleep(1000);
+        
+        assertEquals(30, hashs.size());
+        System.out.println(hashs);
+        assertEquals(hashs.get(0), hashs.get(1));
+        assertEquals(hashs.get(0), hashs.get(2));
+
+    }
+    
 }

@@ -22,34 +22,29 @@ import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
     
     //TODO if builder is used by multiple threads consider make this volatile
-    private JsonArrayImpl array;
+    private List<JsonValue> inner = new ArrayList<JsonValue>();
 
-    public JsonArrayBuilderImpl(JsonArrayImpl array) {
-        super();
-        if(array == null) {
-            throw npe();
-        }
-        this.array = array;
-    }
-    
     public JsonArrayBuilderImpl() {
         super();
-        this.array = new JsonArrayImpl();
     }
+    
 
     @Override
     public JsonArrayBuilder add(final JsonValue value) {
         if (value == null) {
             throw npe();
         }
-        array=new JsonArrayImpl(array,value);
+        inner.add(value);
         return this;
     }
 
@@ -59,7 +54,7 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
             throw npe();
         }
        
-        array=new JsonArrayImpl(array,new JsonStringImpl(value));
+        inner.add(new JsonStringImpl(value));
         return this;
     }
 
@@ -69,7 +64,7 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
             throw npe();
         }
         
-        array=new JsonArrayImpl(array,new JsonNumberImpl(value));
+        inner.add(new JsonNumberImpl(value));
         return this;
     }
 
@@ -79,21 +74,21 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
             throw npe();
         }
        
-        array=new JsonArrayImpl(array,new JsonNumberImpl(new BigDecimal(value)));
+        inner.add(new JsonNumberImpl(new BigDecimal(value)));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final int value) {
        
-        array=new JsonArrayImpl(array,new JsonLongImpl(value));
+        inner.add(new JsonLongImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final long value) {
      
-        array=new JsonArrayImpl(array,new JsonLongImpl(value));
+        inner.add(new JsonLongImpl(value));
         return this;
     }
 
@@ -107,21 +102,21 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
             throw new NumberFormatException("value must not be NaN");
         }
        
-        array=new JsonArrayImpl(array,new JsonDoubleImpl(value));
+        inner.add(new JsonDoubleImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final boolean value) {
        
-        array=new JsonArrayImpl(array,value ? JsonValue.TRUE : JsonValue.FALSE);
+        inner.add(value ? JsonValue.TRUE : JsonValue.FALSE);
         return this;
     }
 
     @Override
     public JsonArrayBuilder addNull() {
        
-        array=new JsonArrayImpl(array,JsonValue.NULL);
+        inner.add(JsonValue.NULL);
         return this;
     }
 
@@ -131,7 +126,7 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
             throw new NullPointerException("builder must not be null");
         }
         
-        array=new JsonArrayImpl(array,builder.build());
+        inner.add(builder.build());
         return this;
     }
 
@@ -141,13 +136,13 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
             throw new NullPointerException("builder must not be null");
         }
        
-        array=new JsonArrayImpl(array,builder.build());
+        inner.add(builder.build());
         return this;
     }
 
     @Override
     public JsonArray build() {
-        return array;
+        return new JsonArrayImpl(inner);
     }
 
     private static NullPointerException npe() {
