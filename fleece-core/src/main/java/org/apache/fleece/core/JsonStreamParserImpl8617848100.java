@@ -27,16 +27,7 @@ import java.math.BigDecimal;
 import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParsingException;
 
-/**
- * 
-Benchmark                                                       Mode   Samples        Score  Score error    Units
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3       81,874       14,874    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      174,998        3,028    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       47,600        8,380    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3       98,079        6,820    ops/s
- */
-
-public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonParser {
+public class JsonStreamParserImpl8617848100 implements JsonChars, EscapedStringAwareJsonParser {
 
     private final char[] buffer;
     private final Reader in;
@@ -62,11 +53,11 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     private boolean isCurrentNumberIntegral = false;
     private Integer currentIntegralNumber = null; //for number from 0 - 9
-    private BigDecimal currentBigDecimalNumber = null;
+    //private BigDecimal currentBigDecimalNumber = null;
     private int avail;
     private int structCount = 0;
 
-    public JsonStreamParserImpl(final Reader reader, final int maxStringLength, final BufferStrategy.BufferProvider<char[]> bufferProvider,
+    public JsonStreamParserImpl8617848100(final Reader reader, final int maxStringLength, final BufferStrategy.BufferProvider<char[]> bufferProvider,
             final BufferStrategy.BufferProvider<char[]> valueBuffer) {
 
         this.maxStringSize = maxStringLength <= 0 ? 8192 : maxStringLength;
@@ -269,9 +260,9 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
         if (isCurrentNumberIntegral) {
             isCurrentNumberIntegral = false;
         }
-        if (currentBigDecimalNumber != null) {
+       /* if (currentBigDecimalNumber != null) {
             currentBigDecimalNumber = null;
-        }
+        }*/
         if (currentIntegralNumber != null) {
             currentIntegralNumber = null;
         }
@@ -708,12 +699,13 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
     public BigDecimal getBigDecimal() {
         if (event != Event.VALUE_NUMBER) {
             throw new IllegalStateException(event + " doesn't support getBigDecimal()");
-        } else if (currentBigDecimalNumber != null) {
+        } /*else if (currentBigDecimalNumber != null) {
             return currentBigDecimalNumber;
         } else {
             return (currentBigDecimalNumber = new BigDecimal(currentValue, 0, valueLength));
-        }
+        }*/
         
+        return new BigDecimal(currentValue, 0, valueLength);
     }
 
     @Override
