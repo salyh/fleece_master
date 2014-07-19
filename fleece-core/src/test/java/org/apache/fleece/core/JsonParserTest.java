@@ -28,6 +28,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
 
@@ -40,6 +41,17 @@ import javax.json.stream.JsonParsingException;
 import org.junit.Test;
 
 public class JsonParserTest {
+    
+    
+    
+    
+    public JsonParserTest() {
+        super();
+        if (!Charset.defaultCharset().equals(Charset.forName("UTF-8"))) {
+            throw new RuntimeException("Default charset is " + Charset.defaultCharset() + ", must must be UTF-8");
+        }
+    }
+
     private void assertSimple(final JsonParser parser) {
         {
             assertTrue(parser.hasNext());
@@ -1013,4 +1025,39 @@ public class JsonParserTest {
         Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail46.json")).read();
     }
     
+    @Test(expected = JsonParsingException.class)
+    public void fail47() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail47.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail48() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail48.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail49() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail49.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail50() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail50.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail51() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail51.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail52() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail52.json")).read();
+    }
 }

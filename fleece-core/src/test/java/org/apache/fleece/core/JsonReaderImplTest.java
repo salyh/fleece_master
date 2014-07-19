@@ -42,6 +42,15 @@ import org.junit.Test;
 
 public class JsonReaderImplTest {
     
+    
+    
+    public JsonReaderImplTest() {
+        super();
+        if (!Charset.defaultCharset().equals(Charset.forName("UTF-8"))) {
+            throw new RuntimeException("Default charset is " + Charset.defaultCharset() + ", must must be UTF-8");
+        }
+    }
+
     protected static Charset utf8Charset = Charset.forName("UTF8");
     protected static Charset asciiCharset = Charset.forName("ASCII");
 
