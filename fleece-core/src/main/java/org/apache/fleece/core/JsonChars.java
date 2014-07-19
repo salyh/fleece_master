@@ -18,6 +18,8 @@
  */
 package org.apache.fleece.core;
 
+import javax.json.stream.JsonParser.Event;
+
 public interface JsonChars {
     char EOF = Character.MIN_VALUE;
 
@@ -68,4 +70,20 @@ public interface JsonChars {
     char CR = '\r';
 
     String NULL = "null";
+    
+    static final byte START_ARRAY = (byte) Event.START_ARRAY.ordinal();
+    static final byte START_OBJECT = (byte) Event.START_OBJECT.ordinal();
+    static final byte KEY_NAME=(byte) Event.KEY_NAME.ordinal();
+    static final byte VALUE_STRING=(byte) Event.VALUE_STRING.ordinal(); 
+    static final byte VALUE_NUMBER=(byte) Event.VALUE_NUMBER.ordinal(); 
+    static final byte VALUE_TRUE=(byte) Event.VALUE_TRUE.ordinal();
+    static final byte VALUE_FALSE=(byte) Event.VALUE_FALSE.ordinal(); 
+    static final byte VALUE_NULL=(byte) Event.VALUE_FALSE.ordinal();
+    static final byte END_OBJECT=(byte) Event.END_OBJECT.ordinal();
+    static final byte END_ARRAY=(byte) Event.END_ARRAY.ordinal();
+    
+    static final byte COMMA_EVENT=Byte.MAX_VALUE;
+    
+    static final Event[] EVT_MAP =Event.values();
+    
 }
