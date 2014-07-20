@@ -31,12 +31,14 @@ import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.NoSuchElementException;
 
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonReader;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
+import javax.json.stream.JsonParser.Event;
 
 import org.junit.Test;
 
@@ -747,6 +749,19 @@ public class JsonParserTest {
         assertEquals(0L, Json.createReader(new ByteArrayInputStream("  \n\n   [   0  ]  \n\n".getBytes())).readArray().getJsonNumber(0).longValue());
     }
     
+    @Test
+    public void testEmptyArray() {
+       JsonParser parser = Json.createParser(new ByteArrayInputStream("[]".getBytes()));
+        assertEquals(Event.START_ARRAY, parser.next());
+        assertEquals(Event.END_ARRAY, parser.next());
+        assertEquals(false, parser.hasNext());
+        try {
+            parser.next();
+            fail("Should have thrown a NoSuchElementException");
+        } catch (NoSuchElementException ne) {
+        }
+    }
+    
     
     @Test(expected = JsonParsingException.class)
     public void fail1() {
@@ -1095,5 +1110,17 @@ public class JsonParserTest {
     public void fail58() {
         
         Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail58.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail59() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail59.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail60() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail60.json")).read();
     }
 }
