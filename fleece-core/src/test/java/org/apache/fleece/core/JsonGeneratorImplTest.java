@@ -18,16 +18,16 @@
  */
 package org.apache.fleece.core;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
 
 import javax.json.Json;
 import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
 
-import java.io.ByteArrayOutputStream;
-import java.util.HashMap;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 public class JsonGeneratorImplTest {
     @Test
@@ -68,18 +68,14 @@ public class JsonGeneratorImplTest {
     public void stringArrayEscapes() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Json.createGenerator(baos).writeStartArray().write("\"val1\t\u0010").write("val2\\").writeEnd().close();
-        //assertEquals("[\"\\\"val1\\t\\u0080\",\"val2\\\\\"]", new String(baos.toByteArray()));
-        System.out.println(new String(baos.toByteArray()));
-        System.out.println("[\"\\\"val1\\t\\u0010\",\"val2\\\\\"]");
+        assertEquals("[\"\\\"val1\\t\\u0010\",\"val2\\\\\"]", new String(baos.toByteArray()));
     }
     
     @Test
     public void stringArrayEscapes2() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Json.createGenerator(baos).writeStartArray().write("\"val1\t\u0066").write("val2\\").writeEnd().close();
-        //assertEquals("[\"\\\"val1\\t\\u0080\",\"val2\\\\\"]", new String(baos.toByteArray()));
-        System.out.println(new String(baos.toByteArray()));
-        System.out.println("[\"\\\"val1\\t\f\",\"val2\\\\\"]");
+        Json.createGenerator(baos).writeStartArray().write("\"val1\t\u0067").write("val2\\").writeEnd().close();
+        assertEquals("[\"\\\"val1\\tg\",\"val2\\\\\"]", new String(baos.toByteArray()));
     }
     
     @Test

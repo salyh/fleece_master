@@ -37,8 +37,8 @@ import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonReader;
 import javax.json.stream.JsonParser;
-import javax.json.stream.JsonParsingException;
 import javax.json.stream.JsonParser.Event;
+import javax.json.stream.JsonParsingException;
 
 import org.junit.Test;
 

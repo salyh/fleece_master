@@ -18,17 +18,17 @@
  */
 package org.apache.fleece.core;
 
+import static org.junit.Assert.assertEquals;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
-
-import org.junit.Test;
 
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 public class JsonArrayBuilderImplTest {
     @Test

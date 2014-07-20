@@ -18,13 +18,13 @@
  */
 package org.apache.fleece.core;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import javax.json.JsonArray;
 
-import org.apache.fleece.core.JsonArrayImpl;
-import org.apache.fleece.core.JsonStringImpl;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 public class JsonArrayImplTest {
     @Test

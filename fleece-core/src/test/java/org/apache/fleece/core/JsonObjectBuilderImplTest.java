@@ -18,12 +18,12 @@
  */
 package org.apache.fleece.core;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import javax.json.Json;
 import javax.json.JsonObjectBuilder;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 public class JsonObjectBuilderImplTest {
     @Test
