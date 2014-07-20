@@ -18,8 +18,6 @@
  */
 package org.apache.fleece.core;
 
-import static org.apache.fleece.core.Strings.asEscapedChar;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -30,22 +28,22 @@ import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParsingException;
 
 /*Benchmark                                                       Mode   Samples        Score  Score error    Units
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3       71,351       10,310    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      148,808        5,555    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       43,630        8,918    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3       92,332       16,575    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3       95,786        7,539    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      197,038        9,880    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       51,102        2,259    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3      107,733       24,000    ops/s
 
 
 Filesize: 15534444484 bytes
-Duration: 263365 ms
+Duration: 233223 ms
 String Events: 420000000
 Integral Number Events: 300000000
 Big Decimal Events: 60000000
-Parsing speed: 58984 bytes/ms
-Parsing speed: 59066328 bytes/sec
-Parsing speed: 57681 kbytes/sec
-Parsing speed: 56 mb/sec
-Parsing speed: 450 mbit/sec
+Parsing speed: 66607 bytes/ms
+Parsing speed: 66671435 bytes/sec
+Parsing speed: 65108 kbytes/sec
+Parsing speed: 63 mb/sec
+Parsing speed: 508 mbit/sec
 */
 
 public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonParser {
@@ -63,7 +61,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
     // current state
     private byte event = 0;
 
-    protected final char[] currentValue;
+    private final char[] currentValue;
     private int valueLength = 0;
 
     // location
@@ -75,7 +73,9 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
     private Integer currentIntegralNumber = null; //for number from 0 - 9
     private BigDecimal currentBigDecimalNumber = null;
     private int avail;
-    
+    private int start = -1;
+    private int end = -1;
+
     //we need a stack if we want detect bad formatted json do determine if we are within an array or not
     //example
     //     Streamparser sees: ],1
@@ -97,12 +97,26 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
     }
 
     private void appendValue(final char c) {
-        if (valueLength >= maxStringSize) {
+        /*if (valueLength >= maxStringSize) {
             throw tmc();
-        }
+        }*/
 
         currentValue[valueLength] = c;
         valueLength++;
+    }
+
+    private void copyValues() {
+        /*if (valueLength >= maxStringSize) {
+            throw tmc();
+        }*/
+
+        if ((end - start) > 0) {
+            System.arraycopy(buffer, start, currentValue, valueLength, (end - start));
+            valueLength += (end - start);
+
+        }
+        
+        start=end=-1;
     }
 
     private String getValue() {
@@ -156,7 +170,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
         return new JsonLocationImpl(line, column, offset);
     }
 
-    protected char read() {
+    private char read() {
         if (reset) {
             reset = false;
 
@@ -173,10 +187,27 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
         if (pointer == -1 || (buffer.length - pointer) <= 1) {
             try {
+                
+              //correct start end mark if neccessary
+                if(start > -1) {
+                    int savedStart=start;
+                    end = buffer.length;
+                    copyValues();
+                    
+                    start=0;
+                    end=(buffer.length-savedStart);
+                     
+                }
+                
+                
                 avail = in.read(buffer, 0, buffer.length);
                 if (avail <= 0) {
                     return EOF;
                 }
+                
+                
+                
+                
 
             } catch (final IOException e) {
                 close();
@@ -196,11 +227,11 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     }
 
-    protected void markCurrentChar() {
+    private void markCurrentChar() {
         mark = buffer[pointer];
     }
 
-    protected void resetToLastMark() {
+    private void resetToLastMark() {
         reset = true;
         offset--;
 
@@ -393,23 +424,42 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     private void readString() {
 
-        boolean esc = false;
-        char highSurrogate = 0;
+        //char highSurrogate = 0;
+        
+        char n = read(); //first char after the starting quote
+        
+        if(n==QUOTE) {
+            return;
+        }
 
         while (true) {
-            char n = read();
-
+  
             if (n == ESCAPE_CHAR) {
-                if (esc) {
-                    esc = false;
-                    appendValue(ESCAPE_CHAR);
-                    continue;
 
-                } else {
-                    esc = true;
+                n = read();
+
+                //  \ u XXXX -> unicode char
+                if (n == 'u') {
+                    n = parseUnicodeHexChars();
+                    //highSurrogate = checkSurrogates(n, highSurrogate);
+                  
+                    
+                    
+                    appendValue(n);
+                
+                // \\ -> \
+                } else if (n == ESCAPE_CHAR) {
+                    appendValue(n);
+
+                }else   {
+                    appendValue(Strings.asEscapedChar(n));
+                    
                 }
-            } else if (!esc && n == QUOTE) {
-                break;
+                
+                n=read();
+
+            } else if (n == QUOTE) {
+                return;
             } else if (n == EOL) {
                 throw uexc("Unexpected linebreak");
 
@@ -418,46 +468,51 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
             } else {
 
-                if (esc) {
-                    if (n == 'u') {
-                        n = parseUnicodeHexChars();
-                    } else {
-                        n = (asEscapedChar(n));
-                    }
+                //char highSurrogate0 = 0;
+                start = pointer;
 
-                    esc = false;
+                while ((n = read()) > '\u001F' && n != ESCAPE_CHAR && n != EOL && n != QUOTE) {
+                    //read fast
+                    //highSurrogate0 = checkSurrogates(n, highSurrogate0);
+                  
 
                 }
+                end = pointer;
 
-                //check for invalid surrogates
+                copyValues();
 
-                //high followed by low
-                if (Character.isHighSurrogate(n)) {
-
-                    if (highSurrogate != 0) {
-                        throw uexc("Unexpected high surrogate");
-                    }
-                    highSurrogate = n;
-                } else if (Character.isLowSurrogate(n)) {
-
-                    if (highSurrogate == 0) {
-                        throw uexc("Unexpected low surrogate");
-                    } else if (!Character.isSurrogatePair(highSurrogate, n)) {
-                        throw uexc("Invalid surrogate pair");
-                    }
-                    highSurrogate = 0;
-                } else if (highSurrogate != 0 && !Character.isLowSurrogate(n)) {
-                    throw uexc("Expected low surrogate");
-                }
-
-                appendValue(n);
-
-            }
-
+            }        
+   
         }//end while()
 
     }
 
+    /*
+    private char checkSurrogates(char n, char highSurrogate) {
+        //check for invalid surrogates
+        //high followed by low       
+        if (Character.isHighSurrogate(n)) {
+
+            if (highSurrogate != 0) {
+                throw uexc("Unexpected high surrogate");
+            }
+            return n;
+        } else if (Character.isLowSurrogate(n)) {
+
+            if (highSurrogate == 0) {
+                throw uexc("Unexpected low surrogate");
+            } else if (!Character.isSurrogatePair(highSurrogate, n)) {
+                throw uexc("Invalid surrogate pair");
+            }
+            return 0;
+        } else if (highSurrogate != 0 && !Character.isLowSurrogate(n)) {
+            throw uexc("Expected low surrogate");
+        }
+        
+        return highSurrogate;
+    }*/
+    
+    
     private char parseUnicodeHexChars() {
         // \u08Ac etc       
         return (char) (((parseHexDigit(read())) * 4096) + ((parseHexDigit(read())) * 256) + ((parseHexDigit(read())) * 16) + ((parseHexDigit(read()))));
@@ -500,62 +555,57 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     private void readNumber(final char c) {
 
-        appendValue(c);
+        start = pointer;
 
         char y = 0;
         isCurrentNumberIntegral = true;
 
         while (isAsciiDigit(y = read())) {
-            appendValue(y);
-
+            //no-op
         }
 
-        if (valueLength > 2 && c == MINUS && currentValue[1] == ZERO) {
+        if ((pointer-start) > 2 && c == MINUS && buffer[start+1] == ZERO) {
             throw uexc("Leading zeros with minus not allowed");
         }
 
-        if (valueLength > 1 && c == ZERO) {
+        if (pointer-start > 1 && c == ZERO) {
             throw uexc("Leading zeros not allowed");
         }
 
         if (y == DOT) {
             isCurrentNumberIntegral = false;
-            appendValue(y);//.   
 
             while (isAsciiDigit(y = read())) {
-
-                appendValue(y);
-
+              //no-op
             }
 
         }
 
         if (y == EXP_LOWERCASE || y == EXP_UPPERCASE) {
             isCurrentNumberIntegral = false;
-            appendValue(y);//E/e
+
             y = read(); //+ or - or digit
 
             if (!isAsciiDigit(y) && y != MINUS && y != PLUS) {
                 throw uexc("Expected DIGIT or + or -");
             }
 
-            appendValue(y);//+ or - or digit
-
             if (y == MINUS || y == PLUS) {
                 y = read();
                 if (!isAsciiDigit(y)) {
                     throw uexc("Unexpected premature end of number");
                 }
-                appendValue(y);
+
             }
 
             while (isAsciiDigit(y = read())) {
-
-                appendValue(y);
-
+              //no-op
             }
 
         }
+
+        end = pointer;
+        copyValues();
 
         if (y == SPACE || y == TAB || y == CR) {
 
@@ -570,13 +620,13 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             resetToLastMark();
 
             //currentValue ['-', DIGIT]
-            if (isCurrentNumberIntegral && c == MINUS && valueLength == 2) {
+            if (isCurrentNumberIntegral && c == MINUS && pointer-start == 2) {
 
                 currentIntegralNumber = -(currentValue[1] - 48); //optimize -0 till -9
             }
 
             //currentValue [DIGIT]
-            if (isCurrentNumberIntegral && c != MINUS && valueLength == 1) {
+            if (isCurrentNumberIntegral && c != MINUS && pointer-start == 1) {
 
                 currentIntegralNumber = (currentValue[0] - 48); //optimize 0 till 9
             }
