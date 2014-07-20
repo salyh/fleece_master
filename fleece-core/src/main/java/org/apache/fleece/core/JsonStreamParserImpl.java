@@ -23,16 +23,33 @@ import static org.apache.fleece.core.Strings.asEscapedChar;
 import java.io.IOException;
 import java.io.Reader;
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.NoSuchElementException;
 
 import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParsingException;
 
+/*Benchmark                                                       Mode   Samples        Score  Score error    Units
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3       71,351       10,310    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      148,808        5,555    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       43,630        8,918    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3       92,332       16,575    ops/s
+
+
+Filesize: 15534444484 bytes
+Duration: 263365 ms
+String Events: 420000000
+Integral Number Events: 300000000
+Big Decimal Events: 60000000
+Parsing speed: 58984 bytes/ms
+Parsing speed: 59066328 bytes/sec
+Parsing speed: 57681 kbytes/sec
+Parsing speed: 56 mb/sec
+Parsing speed: 450 mbit/sec
+*/
 
 public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonParser {
 
-    //TO DO
-    //detect invalid surrogate pairs
-    
     private final char[] buffer;
     private final Reader in;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
@@ -43,36 +60,34 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     private final int maxStringSize;
 
-   
-    //private static final byte COLON_EVENT=Byte.MIN_VALUE;
-    
-    
-    
     // current state
     private byte event = 0;
-    //private int lastSignificantChar = -1;
 
     protected final char[] currentValue;
     private int valueLength = 0;
 
     // location
     private int line = 1;
-    private int column = 1;
-    private int offset = 0;
+    private int column = 0;
+    private int offset = -1;
 
     private boolean isCurrentNumberIntegral = false;
     private Integer currentIntegralNumber = null; //for number from 0 - 9
     private BigDecimal currentBigDecimalNumber = null;
     private int avail;
-    private int openObjectCount = 0;
-    private int openArrayCount = 0;
-    //private boolean lastOpneTagIsArray=false;
     
+    //we need a stack if we want detect bad formatted json do determine if we are within an array or not
+    //example
+    //     Streamparser sees: ],1
+    //the 1 is only allowed if we are within an array
+    //IMHO this can only be determined by build up a stack which tracks the trail of json objects and arrays
+    private boolean[] stack = new boolean[256];
+    private int stackPointer;
 
     public JsonStreamParserImpl(final Reader reader, final int maxStringLength, final BufferStrategy.BufferProvider<char[]> bufferProvider,
             final BufferStrategy.BufferProvider<char[]> valueBuffer) {
 
-        this.maxStringSize = maxStringLength <= 0 ? 4096 : maxStringLength;
+        this.maxStringSize = maxStringLength <= 0 ? 8192 : maxStringLength;
         this.currentValue = valueBuffer.newBuffer();
 
         this.in = reader;
@@ -83,7 +98,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     private void appendValue(final char c) {
         if (valueLength >= maxStringSize) {
-            throw new JsonParsingException("to many chars", createLocation());
+            throw tmc();
         }
 
         currentValue[valueLength] = c;
@@ -97,38 +112,26 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
     @Override
     public final boolean hasNext() {
 
-        if (openArrayCount > 0 || openObjectCount > 0 || (event != END_ARRAY && event != END_OBJECT) || event == 0) {
-            //first event
+        if (stackPointer > 0 || (event != END_ARRAY && event != END_OBJECT) || event == 0) {
             return true;
         }
 
-   
-            //check for garbage at the end of the file
-            //System.out.println("maybe end avail:"+avail+"/pointer:"+pointer+" /buflen+"+buffer.length+" -> ");
-            if (pointer < avail - 2) {
+        //detect garbage at the end of the file after structure is closed
+        if (pointer < avail - 2) {
 
-                final char c = readNextNonWhitespaceChar();
+            final char c = readNextNonWhitespaceChar();
 
-                //System.out.println("read until next non ws "+c);
-                //System.out.println("after ws "+avail+"/pointer:"+pointer+" /buflen+"+buffer.length+" -> ");
-                if (c == 0) {
-                    return false;
-                }
-
-                if (c != COMMA && c != END_ARRAY_CHAR && c != END_OBJECT_CHAR) {
-                    throw new JsonParsingException("unexpected hex value " + c, createLocation());
-                }
-
+            if (c == EOF) {
+                return false;
             }
 
-            return false;
-            /*
-            
-            //System.out.print("hasNext() avail:"+avail+"/pointer:"+pointer+" /buflen+"+buffer.length+" -> ");
-            boolean retval= ((avail>pointer+2)  || event == null || avail==buffer.length);
-            //System.out.println(retval);
-            return retval;*/
-        
+            if (pointer < avail) {
+                throw uexc("EOF expected");
+            }
+
+        }
+
+        return false;
 
     }
 
@@ -137,15 +140,15 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
     }
 
     private int parseHexDigit(final char value) {
-       
-        if (isAsciiDigit(value)){
-            return (int)value-48;
-        }else if (value <= 'f' && value >= 'a'){
-            return ((int)value)-87;
-    }else if((value <= 'F' && value >= 'A')){
-            return ((int)value)-55;
+
+        if (isAsciiDigit(value)) {
+            return value - 48;
+        } else if (value <= 'f' && value >= 'a') {
+            return (value) - 87;
+        } else if ((value <= 'F' && value >= 'A')) {
+            return (value) - 55;
         } else {
-            throw new JsonParsingException("unexpected hex value " + value, createLocation());
+            throw uexc("Invalid hex character");
         }
     }
 
@@ -153,26 +156,31 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
         return new JsonLocationImpl(line, column, offset);
     }
 
-    protected int readNextChar() {
+    protected char read() {
         if (reset) {
             reset = false;
-            //System.out.println(" RETURN mark "+mark);
+
+            offset++;
+            column++;
+
+            if (mark == EOL) {
+                line++;
+
+            }
+
             return mark;
         }
 
         if (pointer == -1 || (buffer.length - pointer) <= 1) {
             try {
                 avail = in.read(buffer, 0, buffer.length);
-                //System.out.println("fillbuff "+avail+": "+new String(buffer));
                 if (avail <= 0) {
-                    
-                    return -1;
+                    return EOF;
                 }
 
-            } catch (final Exception e) {
+            } catch (final IOException e) {
                 close();
-                throw new JsonParsingException("Unexpected IO Exception", e, createLocation());
-
+                throw uexio(e);
             }
 
             pointer = 0;
@@ -180,7 +188,10 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
         } else {
             pointer++;
         }
-        //System.out.println("read('"+buffer[pointer]+"') avail:"+avail+"/pointer:"+pointer+"/buflen:"+buffer.length);
+
+        offset++;
+        column++;
+
         return buffer[pointer];
 
     }
@@ -192,57 +203,12 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
     protected void resetToLastMark() {
         reset = true;
         offset--;
-        
+
         if (mark == EOL) {
             line--;
-            column = -1; //we dont have this info
+            column = -1; //we don't have this info
         }
     }
-
-    private char read() {
-        final int c = readNextChar();
-
-        if (c == -1) {
-
-            //TODO
-            throw new JsonParsingException("eof", createLocation());
-            //NoSuchElementException();
-        }
-
-        offset++;
-        column++;
-System.out.println((char)c+" -->"+c);
-        return (char) c;
-    }
-
-    // Event.START_ARRAY
-    // Event.START_OBJECT
-
-    // Event.END_ARRAY
-    // Event.END_OBJECT
-
-    // Event.KEY_NAME
-
-    // ** 5 Value Event
-    // Event.VALUE_FALSE
-    // Event.VALUE_NULL
-    // Event.VALUE_NUMBER
-    // Event.VALUE_STRING
-    // Event.VALUE_TRUE
-
-    // ***********************
-    // ***********************
-    // Significant chars (8)
-
-    // 0 - start doc
-    // " - quote
-    // , - comma
-
-    // : - separator
-    // { - start obj
-    // } - end obj
-    // [ - start arr
-    // ] - end arr
 
     private char readNextNonWhitespaceChar() {
 
@@ -250,105 +216,82 @@ System.out.println((char)c+" -->"+c);
         char c = read();
 
         while (c == SPACE || c == TAB || c == CR || c == EOL) {
-            c = read();
 
             if (c == EOL) {
                 line++;
-                column=0;
-            } else {
-
-                if (dosCount >= maxStringSize) {
-                    throw new JsonParsingException("max string size reached", createLocation());
-                }
-                dosCount++;
-
+                column = 0;
             }
+
+            //prevent DOS (denial of service) attack
+            if (dosCount >= maxStringSize) {
+                throw tmc();
+            }
+            dosCount++;
+
+            //read next character
+            c = read();
 
         }
 
         return c;
-
     }
 
     @Override
     public final Event next() {
 
-        //event = null;
-        if (isCurrentNumberIntegral) {
-            isCurrentNumberIntegral = false;
+        if (!hasNext()) {
+            throw new NoSuchElementException();
         }
-        if (currentBigDecimalNumber != null) {
-            currentBigDecimalNumber = null;
-        }
-        if (currentIntegralNumber != null) {
-            currentIntegralNumber = null;
-        }
-
-        if(valueLength != 0) {
-            valueLength = 0;
-        }
-        
 
         final char c = readNextNonWhitespaceChar();
 
+        if (c == COMMA) {
+
+            //last event must one of the following-> " ] } LITERAL
+            if (event == START_ARRAY || event == START_OBJECT || event == COMMA_EVENT || event == KEY_NAME) {
+                throw uexc("Expected \" ] } LITERAL");
+            }
+
+            event = COMMA_EVENT;
+            return next();
+
+        }
+
         switch (c) {
-
-            case COMMA:
-
-                //lastSignificantChar must one of the following-> " ] } LITERAL
-                if (event == START_ARRAY || event == START_OBJECT || event == COMMA_EVENT || event == KEY_NAME) {
-                    throw new JsonParsingException("Unexpected character " + c + " (last significant was " + event + ")",
-                            createLocation());
-                }
-                
-                
-                
-                if (event == VALUE_FALSE || event==VALUE_NULL || event==VALUE_TRUE || event==VALUE_NUMBER || event==VALUE_STRING)  {
-                   
-                    //this is only only allowed in an array
-                    
-                    //so if we are not in array context we throw an exception
-                    
-                }
-                
-                //if (structCount <= 0) {
-                //    throw new JsonParsingException("Unexpected character " + c, createLocation());
-                //}
-
-                event = COMMA_EVENT;
-                //lastSignificantChar = c;
-
-                return next();
 
             case START_OBJECT_CHAR:
 
-                handleStartObject(c);
-
-                break;
+                return handleStartObject();
 
             case END_OBJECT_CHAR:
 
-                handleEndObject(c);
+                return handleEndObject();
 
-                break;
             case START_ARRAY_CHAR:
 
-                handleStartArray(c);
+                return handleStartArray();
 
-                break;
             case END_ARRAY_CHAR:
 
-                handleEndArray(c);
-                break;
+                return handleEndArray();
 
-            case QUOTE: // must be escaped within a value
+            case QUOTE:
 
-                handleQuote(c);
+                if (isCurrentNumberIntegral) {
+                    isCurrentNumberIntegral = false;
+                }
+                if (currentBigDecimalNumber != null) {
+                    currentBigDecimalNumber = null;
+                }
+                if (currentIntegralNumber != null) {
+                    currentIntegralNumber = null;
+                }
 
-                break;
+                if (valueLength != 0) {
+                    valueLength = 0;
+                }
+                return handleQuote();
 
-            // non string values (literals)
-            //$FALL-THROUGH$
             case '0':
             case '1':
             case '2':
@@ -363,92 +306,89 @@ System.out.println((char)c+" -->"+c);
             case FALSE_F: // false
             case TRUE_T: // true
             case NULL_N: // null
+                if (isCurrentNumberIntegral) {
+                    isCurrentNumberIntegral = false;
+                }
+                if (currentBigDecimalNumber != null) {
+                    currentBigDecimalNumber = null;
+                }
+                if (currentIntegralNumber != null) {
+                    currentIntegralNumber = null;
+                }
 
-                handleLiteral(c);
-
-                break;
-
-            // eof
-            case EOF:
-
-                throw new JsonParsingException("Unexpected character " + c, createLocation());//new NoSuchElementException(); //TODO
-
+                if (valueLength != 0) {
+                    valueLength = 0;
+                }
+                return handleLiteral(c);
             default:
-                throw new JsonParsingException("Unexpected character " + c, createLocation());
+                throw uexc("Excpected structural character or digit or 't' or 'n' or 'f' or '-'");
 
         }
 
-        //System.out.println(" --> "+event+" ->'"+getValue()+"'");
-        return EVT_MAP[event];
-
-        //throw new JsonParsingException("Unexpected character " + c, createLocation());
-
     }
 
-    private void handleStartObject(final char c) {
+    private Event handleStartObject() {
 
-        //lastSignificantChar must one of the following-> : , [
-        if (event!=0&&event != KEY_NAME && event!=START_ARRAY && event!=COMMA_EVENT) {
-            throw new JsonParsingException("Unexpected character " + c + " (last significant was " + event + ")",
-                    createLocation());
+        //last event must one of the following-> : , [
+        if (event != 0 && event != KEY_NAME && event != START_ARRAY && event != COMMA_EVENT) {
+            throw uexc("Excpected : , [");
         }
 
-        openObjectCount++;
-        
-  
-   
+        if (stackPointer >= stack.length) {
+            stack = Arrays.copyOf(stack, stack.length * 2);
+        }
 
-        event = START_OBJECT;
+        stack[stackPointer++] = true;
+
+        return EVT_MAP[event = START_OBJECT];
 
     }
 
-    private void handleEndObject(final char c) {
+    private Event handleEndObject() {
 
-        //lastSignificantChar must one of the following-> " ] { } LITERAL
+        //last event must one of the following-> " ] { } LITERAL
         if (event == START_ARRAY || event == COMMA_EVENT) {
-            throw new JsonParsingException("Unexpected character " + c + " (last significant was " + event + ")",
-                    createLocation());
+            throw uexc("Expected \" ] { } LITERAL");
         }
 
-        openObjectCount--;
-        
-     
-            
-        
-        //lastSignificantChar = c;
+        if (!stack[stackPointer - 1]) {
+            throw uexc("Unbalanced container, expected ]");
+        }
 
-        event = END_OBJECT;
+        stackPointer--;
+
+        return EVT_MAP[event = END_OBJECT];
     }
 
-    private void handleStartArray(final char c) {
+    private Event handleStartArray() {
 
-      //lastSignificantChar must one of the following-> : , [
-        if (event!=0&&event != KEY_NAME && event != START_ARRAY&& event!=COMMA_EVENT) {
-            throw new JsonParsingException("Unexpected character " + c + " (last significant was " + event + ")",
-                    createLocation());
+        //last event must one of the following-> : , [
+        if (event != 0 && event != KEY_NAME && event != START_ARRAY && event != COMMA_EVENT) {
+            throw uexc("Expected : , [");
         }
 
-     
-        
-        openArrayCount++;
-        //lastSignificantChar = c;
+        if (stackPointer >= stack.length) {
+            stack = Arrays.copyOf(stack, stack.length * 2);
+        }
 
-        event = START_ARRAY;
+        stack[stackPointer++] = false;
+
+        return EVT_MAP[event = START_ARRAY];
     }
 
-    private void handleEndArray(final char c) {
+    private Event handleEndArray() {
 
-        //lastSignificantChar must one of the following-> [ ] } " LITERAL
-        if (event==START_OBJECT|| event == COMMA_EVENT) {
-            throw new JsonParsingException("Unexpected character " + c + " (last significant was " + event + ")",
-                    createLocation());
+        //last event must one of the following-> [ ] } " LITERAL
+        if (event == START_OBJECT || event == COMMA_EVENT) {
+            throw uexc("Expected [ ] } \" LITERAL");
         }
 
-        openArrayCount--;
-       
-        //lastSignificantChar = c;
+        if (stack[stackPointer - 1]) {
+            throw uexc("Unbalanced container, expected }");
+        }
+        stackPointer--;
 
-        event = END_ARRAY;
+        return EVT_MAP[event = END_ARRAY];
     }
 
     private void readString() {
@@ -471,49 +411,46 @@ System.out.println((char)c+" -->"+c);
             } else if (!esc && n == QUOTE) {
                 break;
             } else if (n == EOL) {
-                throw new JsonParsingException("Unexpected linebreak ", createLocation());
-                
-            } else if (n >= '\u0000' && n <= '\u001F') {
-                throw new JsonParsingException("Unescaped control character ", createLocation());
+                throw uexc("Unexpected linebreak");
 
+            } else if (n >= '\u0000' && n <= '\u001F') {
+                throw uexc("Unescaped control character");
 
             } else {
 
-                
                 if (esc) {
                     if (n == 'u') {
                         n = parseUnicodeHexChars();
                     } else {
-                        n= (asEscapedChar(n));
+                        n = (asEscapedChar(n));
                     }
 
                     esc = false;
 
-                } 
-                
-                //System.out.println("r codepoint: "+String.valueOf(n).codePointAt(0));
-                
-                //high followed by low
-                if(Character.isHighSurrogate(n)) {
-                    
-                    if(highSurrogate!=0) throw new JsonParsingException("unexpected high surrogate "+(int)n, null);
-                    
-                    highSurrogate = n;
-                    //System.out.println("hs: "+(int)n);
-                } 
-                else if(Character.isLowSurrogate(n)) {
-                    //System.out.println("ls: "+(int)n);
-                    if(highSurrogate==0) throw new JsonParsingException("unexpected low surrogate "+(int)n, null);
-                    else if(!Character.isSurrogatePair(highSurrogate, n)) throw new JsonParsingException("invalid surrogate pair", null);
-                  
-                    highSurrogate=0;
-                }else if(highSurrogate!=0 && !Character.isLowSurrogate(n)) {
-                    throw new JsonParsingException("expected low surrogate missing "+(int)n, null);
                 }
-                
+
+                //check for invalid surrogates
+
+                //high followed by low
+                if (Character.isHighSurrogate(n)) {
+
+                    if (highSurrogate != 0) {
+                        throw uexc("Unexpected high surrogate");
+                    }
+                    highSurrogate = n;
+                } else if (Character.isLowSurrogate(n)) {
+
+                    if (highSurrogate == 0) {
+                        throw uexc("Unexpected low surrogate");
+                    } else if (!Character.isSurrogatePair(highSurrogate, n)) {
+                        throw uexc("Invalid surrogate pair");
+                    }
+                    highSurrogate = 0;
+                } else if (highSurrogate != 0 && !Character.isLowSurrogate(n)) {
+                    throw uexc("Expected low surrogate");
+                }
+
                 appendValue(n);
-                
-                
 
             }
 
@@ -521,28 +458,20 @@ System.out.println((char)c+" -->"+c);
 
     }
 
-    private char parseUnicodeHexChars() {       
+    private char parseUnicodeHexChars() {
         // \u08Ac etc       
-        return (char) (((parseHexDigit(read())) * 4096) + ((parseHexDigit(read())) * 256)
-                + ((parseHexDigit(read())) * 16) + ((parseHexDigit(read()))));
-
+        return (char) (((parseHexDigit(read())) * 4096) + ((parseHexDigit(read())) * 256) + ((parseHexDigit(read())) * 16) + ((parseHexDigit(read()))));
 
     }
 
-    private void handleQuote(final char c) {
+    private Event handleQuote() {
 
-      //lastSignificantChar must one of the following-> : { [ ,
-        if (event != KEY_NAME && event != START_OBJECT && event!=START_ARRAY&& event!=COMMA_EVENT) {
-            throw new JsonParsingException("Unexpected character " + c + " (last significant was " +event + ")",
-                    createLocation());
+        //always the beginning quote of a key or value  
+
+        //last event must one of the following-> : { [ ,
+        if (event != KEY_NAME && event != START_OBJECT && event != START_ARRAY && event != COMMA_EVENT) {
+            throw uexc("Expected : { [ ,");
         }
-
-        
-        
-        //always the beginning quote of a key or value
-
-        //lastSignificantChar = c;
-
         readString();
         final char n = readNextNonWhitespaceChar();
 
@@ -550,192 +479,162 @@ System.out.println((char)c+" -->"+c);
 
         if (n == KEY_SEPARATOR) {
 
-            event = KEY_NAME;
-            //lastSignificantChar = n;
+            return EVT_MAP[event = KEY_NAME];
 
         } else {
 
-           /* if(event==COMMA_EVENT) {
+            if (event == COMMA_EVENT) {
                 //only allowed within array
-                if(openArrayCount == 0 || openArrayCount%2==0) {
-                    throw new JsonParsingException("Unexpected character " + c + " (last significant was " + event + ")",
-                            createLocation());
-                    }
-                
-            }*/
-            
-            
-            
-            resetToLastMark();
-            event = VALUE_STRING;
-        }
-        
-        /**
-         * if(openArrayCount <= openObjectCount) {            
-            //not directly in an array
-            
-            if (event!= KEY_NAME && event!=START_ARRAY&& event!=COMMA_EVENT) {
-                throw new JsonParsingException("unexpected character " + c + " last significant " + event,
-                        createLocation());
+
+                if (stack[stackPointer - 1]) {
+                    throw uexc("Not in an array context");
+                }
+
             }
-            
+
+            resetToLastMark();
+            return EVT_MAP[event = VALUE_STRING];
         }
-         */
 
     }
 
-    private void handleLiteral(final char c) {
-        
-        //lastSignificantChar must one of the following-> : , [
-        if (event!= KEY_NAME && event!=START_ARRAY&& event!=COMMA_EVENT) {
-            throw new JsonParsingException("unexpected character " + c + " last significant " + event,
-                    createLocation());
-        }
-        
-        /*
-        if(event==COMMA_EVENT) {
-            //only allowed within array
-            if(openArrayCount == 0 || openArrayCount%2==0) {
-                throw new JsonParsingException("Unexpected character " + c + " (last significant was " + event + ")",
-                        createLocation());
-                }
-            
-        }*/
+    private void readNumber(final char c) {
 
-        
-        
-        //lastSignificantChar = -2;
+        appendValue(c);
+
+        char y = 0;
+        isCurrentNumberIntegral = true;
+
+        while (isAsciiDigit(y = read())) {
+            appendValue(y);
+
+        }
+
+        if (valueLength > 2 && c == MINUS && currentValue[1] == ZERO) {
+            throw uexc("Leading zeros with minus not allowed");
+        }
+
+        if (valueLength > 1 && c == ZERO) {
+            throw uexc("Leading zeros not allowed");
+        }
+
+        if (y == DOT) {
+            isCurrentNumberIntegral = false;
+            appendValue(y);//.   
+
+            while (isAsciiDigit(y = read())) {
+
+                appendValue(y);
+
+            }
+
+        }
+
+        if (y == EXP_LOWERCASE || y == EXP_UPPERCASE) {
+            isCurrentNumberIntegral = false;
+            appendValue(y);//E/e
+            y = read(); //+ or - or digit
+
+            if (!isAsciiDigit(y) && y != MINUS && y != PLUS) {
+                throw uexc("Expected DIGIT or + or -");
+            }
+
+            appendValue(y);//+ or - or digit
+
+            if (y == MINUS || y == PLUS) {
+                y = read();
+                if (!isAsciiDigit(y)) {
+                    throw uexc("Unexpected premature end of number");
+                }
+                appendValue(y);
+            }
+
+            while (isAsciiDigit(y = read())) {
+
+                appendValue(y);
+
+            }
+
+        }
+
+        if (y == SPACE || y == TAB || y == CR) {
+
+            y = readNextNonWhitespaceChar();
+
+        }
+
+        markCurrentChar();
+
+        if (y == COMMA || y == END_ARRAY_CHAR || y == END_OBJECT_CHAR || y == EOL) {
+            //end of number
+            resetToLastMark();
+
+            //currentValue ['-', DIGIT]
+            if (isCurrentNumberIntegral && c == MINUS && valueLength == 2) {
+
+                currentIntegralNumber = -(currentValue[1] - 48); //optimize -0 till -9
+            }
+
+            //currentValue [DIGIT]
+            if (isCurrentNumberIntegral && c != MINUS && valueLength == 1) {
+
+                currentIntegralNumber = (currentValue[0] - 48); //optimize 0 till 9
+            }
+
+            return;
+
+        }
+
+        throw uexc("Unexpected premature end of number");
+
+    }
+
+    private Event handleLiteral(final char c) {
+
+        //last event must one of the following-> : , [
+        if (event != KEY_NAME && event != START_ARRAY && event != COMMA_EVENT) {
+            throw uexc("Excpected : , [");
+        }
+
+        if (event == COMMA_EVENT) {
+            //only allowed within array
+
+            if (stack[stackPointer - 1]) {
+                throw uexc("Not in an array context");
+            }
+
+        }
 
         // probe literals
         switch (c) {
             case TRUE_T:
 
                 if (read() != TRUE_R || read() != TRUE_U || read() != TRUE_E) {
-                    throw new JsonParsingException("Unexpected literal ", createLocation());
+                    throw uexc("Expected LITERAL: true");
                 }
-                event = VALUE_TRUE;
-                break;
+                return EVT_MAP[event = VALUE_TRUE];
             case FALSE_F:
 
                 if (read() != FALSE_A || read() != FALSE_L || read() != FALSE_S || read() != FALSE_E) {
-                    throw new JsonParsingException("Unexpected literal ", createLocation());
+                    throw uexc("Expected LITERAL: false");
                 }
 
-                event = VALUE_FALSE;
-                break;
+                return EVT_MAP[event = VALUE_FALSE];
+
             case NULL_N:
 
                 if (read() != NULL_U || read() != NULL_L || read() != NULL_L) {
-                    throw new JsonParsingException("Unexpected literal ", createLocation());
+                    throw uexc("Expected LITERAL: null");
                 }
-                event = VALUE_NULL;
-                break;
+                return EVT_MAP[event = VALUE_NULL];
 
-            default: // number
-                appendValue(c);
-
-                boolean dotpassed = false;
-                boolean epassed = false;
-                char last = c;
-
-                while (true) {
-
-                    char n = read();
-
-                    if (!isNumber(n)) {
-
-                        if (n == SPACE || n == TAB || n == CR) {
-
-                            n = readNextNonWhitespaceChar();
-
-                        }
-
-                        markCurrentChar();
-
-                        if (n == COMMA || n == END_ARRAY_CHAR || n == END_OBJECT_CHAR || n == EOL) {
-                            
-                            if (last == EXP_LOWERCASE || last == EXP_UPPERCASE || last == MINUS || last == PLUS || last == DOT) {
-                                throw new JsonParsingException("unexpected character " + n + " (" + (int) n + ")", createLocation());
-                            } else 
-                            {
-                            
-                            resetToLastMark();
-
-                            isCurrentNumberIntegral = (!dotpassed && !epassed);
-
-                            if (isCurrentNumberIntegral && c == MINUS && valueLength < 3 && last >= '0' && last <= '9') {
-
-                                currentIntegralNumber = -(last - 48); //optimize -0 till -9
-                            }
-
-                            if (isCurrentNumberIntegral && c != MINUS && valueLength < 2 && last >= '0' && last <= '9') {
-
-                                currentIntegralNumber = (last - 48); //optimize 0 till 9
-                            }
-
-                            event = VALUE_NUMBER;
-
-                            break;
-                            }
-                        } else {
-                            throw new JsonParsingException("unexpected character " + n + " (" + (int) n + ")", createLocation());
-                        }
-
-                    }
-
-                    //is one of 0-9 . e E - +
-
-                    // minus only allowed as first char or after e/E
-                    if (n == MINUS && valueLength > 0 && last != EXP_LOWERCASE && last != EXP_UPPERCASE) {
-                        throw new JsonParsingException("unexpected character " + n, createLocation());
-                    } else if (n == PLUS && last != EXP_LOWERCASE && last != EXP_UPPERCASE) {
-                     // plus only allowed after e/E
-                        throw new JsonParsingException("unexpected character " + n, createLocation());
-                    }
-
-                  //positive numbers
-                    if (!dotpassed && c == ZERO && valueLength > 0 && n != DOT) {
-                        throw new JsonParsingException("unexpected character " + n + " (no leading zeros allowed)", createLocation());
-                    } else  if (!dotpassed && c == MINUS && last == ZERO && n != DOT && valueLength <= 2) {
-                      //negative numbers
-                        throw new JsonParsingException("unexpected character " + n + " (no leading zeros allowed) ", createLocation());
-                    }
-
-                    if (n == DOT) {
-
-                        if (dotpassed) {
-                            throw new JsonParsingException("more than one dot", createLocation());
-                        }
-
-                        if (epassed) {
-                            throw new JsonParsingException("no dot allowed here", createLocation());
-                        }
-
-                        dotpassed = true;
-
-                    } else if (n == EXP_LOWERCASE || n == EXP_UPPERCASE) {
-
-                        if (epassed) {
-                            throw new JsonParsingException("more than one e/E", createLocation());
-                        }
-
-                        epassed = true;
-                    }
-
-                    appendValue(n);
-                    last = n;
-
-                }
-
+            default:
+                readNumber(c);
+                return EVT_MAP[event = VALUE_NUMBER];
         }
 
     }
 
-    private static boolean isNumber(final char c) {
-        return  c == DOT || c == MINUS || c == PLUS || c == EXP_LOWERCASE || c == EXP_UPPERCASE || isAsciiDigit(c);
-    }
-
-    
     @Override
     public String getString() {
         if (event == KEY_NAME || event == VALUE_STRING || event == VALUE_NUMBER) {
@@ -751,7 +650,7 @@ System.out.println((char)c+" -->"+c);
         if (event != VALUE_NUMBER) {
             throw new IllegalStateException(event + " doesn't support isIntegralNumber()");
         } else {
-        return isCurrentNumberIntegral;
+            return isCurrentNumberIntegral;
         }
     }
 
@@ -790,7 +689,6 @@ System.out.println((char)c+" -->"+c);
             return getBigDecimal().longValue();
         }
 
-        
     }
 
     @Override
@@ -802,7 +700,7 @@ System.out.println((char)c+" -->"+c);
         } else {
             return (currentBigDecimalNumber = new BigDecimal(currentValue, 0, valueLength));
         }
-        
+
     }
 
     @Override
@@ -831,6 +729,9 @@ System.out.println((char)c+" -->"+c);
         return Strings.escape(getValue());
     }
 
+    //parse a char[] to long while checking overflow
+    //if overflowed return null
+    //no additional checks since we are sure here that there are no non digits in the array
     private static Long parseLongFromChars(final char[] chars, final int start, final int end) {
 
         long retVal = 0;
@@ -847,6 +748,9 @@ System.out.println((char)c+" -->"+c);
         return negative ? -retVal : retVal;
     }
 
+    //parse a char[] to int while checking overflow
+    //if overflowed return null
+    //no additional checks since we are sure here that there are no non digits in the array
     private static Integer parseIntegerFromChars(final char[] chars, final int start, final int end) {
 
         int retVal = 0;
@@ -862,108 +766,27 @@ System.out.println((char)c+" -->"+c);
 
         return negative ? -retVal : retVal;
     }
-/*
-    
-    
-    @Override
-    public String getString() {
-        if (event == Event.KEY_NAME || event == Event.VALUE_STRING || event == Event.VALUE_NUMBER) {
-            return getValue();
-        }
-        throw new IllegalStateException(event + " doesn't support getString()");
+
+    private JsonParsingException uexc(final char c, final String message) {
+        final JsonLocation location = createLocation();
+        return new JsonParsingException("Unexpected character '" + c + "' (Codepoint: " + String.valueOf(c).codePointAt(0) + ") on line "
+                + location.getLineNumber() + ". Reason is [" + message + "]", location);
     }
 
-    @Override
-    public boolean isIntegralNumber() {
-
-        if (event != Event.VALUE_NUMBER) {
-            throw new IllegalStateException(event + " doesn't support isIntegralNumber()");
-        }
-
-        return isCurrentNumberIntegral;
+    private JsonParsingException uexc(final String message) {
+        final char c = pointer < 0 ? 0 : buffer[pointer];
+        return uexc(c, message);
     }
 
-    @Override
-    public int getInt() {
-        if (event != Event.VALUE_NUMBER) {
-            throw new IllegalStateException(event + " doesn't support getInt()");
-        }
-
-        if (isCurrentNumberIntegral && currentIntegralNumber != null) {
-            return currentIntegralNumber;
-        }
-
-        if (isCurrentNumberIntegral) {
-            return (int) parseLongFromChars(currentValue, 0, valueLength);
-        }
-
-        return getBigDecimal().intValue();
+    private JsonParsingException tmc() {
+        final JsonLocation location = createLocation();
+        return new JsonParsingException("Too many characters. Maximum string length of " + maxStringSize + " exceeded on line "
+                + location.getLineNumber(), location);
     }
 
-    @Override
-    public long getLong() {
-        if (event != Event.VALUE_NUMBER) {
-            throw new IllegalStateException(event + " doesn't support getLong()");
-        }
-
-        if (isCurrentNumberIntegral && currentIntegralNumber != null) {
-            return currentIntegralNumber;
-        } // int is ok, its only from 0-9
-
-        if (isCurrentNumberIntegral) {
-            return parseLongFromChars(currentValue, 0, valueLength);
-        }
-
-        return getBigDecimal().longValue();
+    private JsonParsingException uexio(final IOException e) {
+        final JsonLocation location = createLocation();
+        return new JsonParsingException("Unexpected IO exception on line " + location.getLineNumber(), e, location);
     }
 
-    @Override
-    public BigDecimal getBigDecimal() {
-        if (event != Event.VALUE_NUMBER) {
-            throw new IllegalStateException(event + " doesn't support getBigDecimal()");
-        }
-
-        if (currentBigDecimalNumber != null) {
-            return currentBigDecimalNumber;
-        }
-
-        return (currentBigDecimalNumber = new BigDecimal(currentValue, 0, valueLength));
-    }
-
-    @Override
-    public JsonLocation getLocation() {
-        return createLocation();
-    }
-
-    @Override
-    public void close() {
-
-        bufferProvider.release(buffer);
-        valueProvider.release(currentValue);
-
-        try {
-
-            in.close();
-        } catch (final IOException e) {
-
-            //ignore
-        }
-
-    }
-
-    @Override
-    public String getEscapedString() {
-        return Strings.escape(getValue());
-    }
-
-    private static long parseLongFromChars(final char[] chars, final int start, final int end) {
-
-        long retVal = 0;
-        final boolean negative = chars[start] == MINUS;
-        for (int i = negative ? start + 1 : start; i < end; i++) {
-            retVal = retVal * 10 + (chars[i] - ZERO);
-        }
-        return negative ? -retVal : retVal;
-    }
-*/
 }
