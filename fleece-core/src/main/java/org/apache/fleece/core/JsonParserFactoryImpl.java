@@ -56,7 +56,9 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
     }
 
     private BufferStrategy getBufferProvider() {
-        if(config==null) return BufferStrategy.QUEUE;
+        if(config==null) {
+            return BufferStrategy.QUEUE;
+        }
         final Object name = config.get(BUFFER_STRATEGY);
         if (name != null) {
             return BufferStrategy.valueOf(name.toString().toUpperCase(Locale.ENGLISH));
@@ -65,7 +67,9 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
     }
 
     private int getInt(final String key) {
-        if(config==null) return DEFAULT_MAX_SIZE;
+        if(config==null) {
+            return DEFAULT_MAX_SIZE;
+        }
         final Object maxStringSize = config.get(key);
         if (maxStringSize == null) {
             return DEFAULT_MAX_SIZE;
