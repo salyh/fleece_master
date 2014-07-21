@@ -749,6 +749,61 @@ public class JsonParserTest {
         assertEquals(0L, Json.createReader(new ByteArrayInputStream("  \n\n   [   0  ]  \n\n".getBytes())).readArray().getJsonNumber(0).longValue());
     }
     
+    
+    public void maxStringStringOK() {
+        // using a reader as wrapper of parser
+        Json.createReaderFactory(new HashMap<String, Object>() {
+            {
+                put("org.apache.fleece.max-string-length", "5");
+            }
+        }).createReader(new ByteArrayInputStream("[\"abcde\"]".getBytes())).read();
+       
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void maxStringStringFail() {
+        // using a reader as wrapper of parser
+        Json.createReaderFactory(new HashMap<String, Object>() {
+            {
+                put("org.apache.fleece.max-string-length", "5");
+            }
+        }).createReader(new ByteArrayInputStream("[\"abcdef\"]".getBytes())).read();
+       
+    }
+    
+    public void maxStringNumberOK() {
+        // using a reader as wrapper of parser
+        Json.createReaderFactory(new HashMap<String, Object>() {
+            {
+                put("org.apache.fleece.max-string-length", "5");
+            }
+        }).createReader(new ByteArrayInputStream("[12.3]".getBytes())).read();
+       
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void maxStringNumberFail() {
+        // using a reader as wrapper of parser
+        Json.createReaderFactory(new HashMap<String, Object>() {
+            {
+                put("org.apache.fleece.max-string-length", "5");
+            }
+        }).createReader(new ByteArrayInputStream("[12.333]".getBytes())).read();
+       
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void maxStringWhitespace() {
+        // using a reader as wrapper of parser
+        Json.createReaderFactory(new HashMap<String, Object>() {
+            {
+                put("org.apache.fleece.max-string-length", "5");
+            }
+        }).createReader(new ByteArrayInputStream("[\"12\"           ]".getBytes())).read();
+       
+    }
+    
+    
     @Test
     public void testEmptyArray() {
        JsonParser parser = Json.createParser(new ByteArrayInputStream("[]".getBytes()));
@@ -1031,7 +1086,7 @@ public class JsonParserTest {
     @Test(expected = JsonParsingException.class)
     public void fail45() {
         
-        System.out.println(Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail45.json")).readObject().getString("a"));
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail45.json")).read();
     }
     
     @Test(expected = JsonParsingException.class)

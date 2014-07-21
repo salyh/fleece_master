@@ -28,11 +28,23 @@ import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParsingException;
 
 /*
- 
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3      101,611        4,082    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      207,471        6,576    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       54,621       11,268    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3      109,982       94,778    ops/s
+
+Benchmark                                                       Mode   Samples        Score  Score error    Units
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3      100,454        9,871    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      202,550        2,177    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       55,717       10,590    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3      114,011       21,459    ops/s
+
+Filesize: 15534444484 bytes
+Duration: 223308 ms
+String Events: 420000000
+Integral Number Events: 300000000
+Big Decimal Events: 60000000
+Parsing speed: 69565 bytes/ms
+Parsing speed: 69661186 bytes/sec
+Parsing speed: 68028 kbytes/sec
+Parsing speed: 66 mb/sec
+Parsing speed: 531 mbit/sec
 
 */
 
@@ -83,13 +95,14 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
         this.buffer = bufferProvider.newBuffer();
         this.bufferProvider = bufferProvider;
         this.valueProvider = valueBuffer;
+
+        if (currentValue.length < maxStringLength) {
+            throw cust("Size of value buffer cannot be smaller than maximum string length");
+        }
+
     }
 
     private void appendValue(final char c) {
-        /*if (valueLength >= maxStringSize) {
-            throw tmc();
-        }*/
-
         currentValue[valueLength] = c;
         valueLength++;
     }
@@ -98,13 +111,12 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
         if ((end - start) > 0) {
 
-            /*if (valueLength >= maxStringSize) {
-            throw tmc();
-            }*/
-
             System.arraycopy(buffer, start, currentValue, valueLength, (end - start));
             valueLength += (end - start);
 
+            if (valueLength > maxStringSize) {
+                throw tmc();
+            }
         }
 
         start = end = -1;
@@ -412,6 +424,11 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
                 n = read();
 
             } else if (n == QUOTE) {
+
+                if (valueLength > maxStringSize) {
+                    throw tmc();
+                }
+
                 return;
             } else if (n == EOL) {
                 throw uexc("Unexpected linebreak");
@@ -605,6 +622,10 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
                 //we crossed a buffer boundary, use value buffer
                 copyValues();
 
+            } else {
+                if ((end - start) >= maxStringSize) {
+                    throw tmc();
+                }
             }
 
             return;
@@ -815,6 +836,11 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
     private JsonParsingException uexio(final IOException e) {
         final JsonLocation location = createLocation();
         return new JsonParsingException("Unexpected IO exception on line " + location.getLineNumber(), e, location);
+    }
+
+    private JsonParsingException cust(final String message) {
+        final JsonLocation location = createLocation();
+        return new JsonParsingException("General exception. Reason is [" + message + "]", location);
     }
 
 }
