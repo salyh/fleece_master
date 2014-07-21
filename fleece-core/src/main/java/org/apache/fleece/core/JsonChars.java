@@ -31,14 +31,6 @@ public interface JsonChars {
     char COMMA = ',';
     char KEY_SEPARATOR = ':';
     
-    int I_START_OBJECT_CHAR = (int) START_OBJECT_CHAR;
-    int I_END_OBJECT_CHAR = (int) END_OBJECT_CHAR ;
-    int I_START_ARRAY_CHAR = (int) START_ARRAY_CHAR;
-    int I_END_ARRAY_CHAR  = (int) END_ARRAY_CHAR ;
-    int I_QUOTE = (int) QUOTE;
-    int I_COMMA = (int) COMMA;
-    int I_KEY_SEPARATOR = (int) KEY_SEPARATOR;
-    
     char EOL = '\n';
     char SPACE = ' ';
     
