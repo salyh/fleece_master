@@ -21,7 +21,6 @@ package org.apache.fleece.core;
 import java.io.IOException;
 import java.io.Reader;
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.NoSuchElementException;
 
 import javax.json.stream.JsonLocation;
@@ -30,21 +29,18 @@ import javax.json.stream.JsonParsingException;
 /*
 
 Benchmark                                                       Mode   Samples        Score  Score error    Units
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3      100,454        9,871    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      202,550        2,177    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       55,717       10,590    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3      114,011       21,459    ops/s
-
-Filesize: 15534444484 bytes
-Duration: 223308 ms
-String Events: 420000000
-Integral Number Events: 300000000
-Big Decimal Events: 60000000
-Parsing speed: 69565 bytes/ms
-Parsing speed: 69661186 bytes/sec
-Parsing speed: 68028 kbytes/sec
-Parsing speed: 66 mb/sec
-Parsing speed: 531 mbit/sec
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3      101,783        4,515    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly100kChars           thrpt         3     1034,848       55,630    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly10kChars            thrpt         3    10428,278     6033,344    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1kChars             thrpt         3   105019,057    22400,196    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly3kChars             thrpt         3    36579,693     2383,375    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      204,281        5,169    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       55,277        8,277    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read100kChars                thrpt         3      573,250       84,506    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read10kChars                 thrpt         3     5715,976      966,425    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1kChars                  thrpt         3    59745,484    11536,112    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read3kChars                  thrpt         3    19560,091     3034,515    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3      114,429       38,245    ops/s
 
 */
 
@@ -82,8 +78,18 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
     //     Streamparser sees: ],1
     //the 1 is only allowed if we are within an array
     //IMHO this can only be determined by build up a stack which tracks the trail of json objects and arrays
-    private boolean[] stack = new boolean[256];
-    private int stackPointer;
+    private StructureElement currentStructureElement = null;
+
+    private static final class StructureElement {
+        final StructureElement previous;
+        final boolean isArray;
+
+        public StructureElement(final StructureElement previous, final boolean isArray) {
+            super();
+            this.previous = previous;
+            this.isArray = isArray;
+        }
+    }
 
     public JsonStreamParserImpl(final Reader reader, final int maxStringLength, final BufferStrategy.BufferProvider<char[]> bufferProvider,
             final BufferStrategy.BufferProvider<char[]> valueBuffer) {
@@ -111,12 +117,13 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
         if ((end - start) > 0) {
 
+            if ((end - start) > maxStringSize) {
+                throw tmc();
+            }
+
             System.arraycopy(buffer, start, currentValue, valueLength, (end - start));
             valueLength += (end - start);
 
-            if (valueLength > maxStringSize) {
-                throw tmc();
-            }
         }
 
         start = end = -1;
@@ -125,7 +132,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
     @Override
     public final boolean hasNext() {
 
-        if (stackPointer > 0 || (event != END_ARRAY && event != END_OBJECT) || event == 0) {
+        if (currentStructureElement != null || (event != END_ARRAY && event != END_OBJECT) || event == 0) {
             return true;
         }
 
@@ -332,11 +339,12 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             throw uexc("Excpected : , [");
         }
 
-        if (stackPointer >= stack.length) {
-            stack = Arrays.copyOf(stack, stack.length * 2);
+        if (currentStructureElement == null) {
+            currentStructureElement = new StructureElement(null, false);
+        } else {
+            final StructureElement localStructureElement = new StructureElement(currentStructureElement, false);
+            currentStructureElement = localStructureElement;
         }
-
-        stack[stackPointer++] = true;
 
         return EVT_MAP[event = START_OBJECT];
 
@@ -349,11 +357,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             throw uexc("Expected \" ] { } LITERAL");
         }
 
-        if (stackPointer < 1 || !stack[stackPointer - 1]) {
-            throw uexc("Unbalanced container, expected ]");
-        }
-
-        stackPointer--;
+        currentStructureElement = currentStructureElement.previous;
 
         return EVT_MAP[event = END_OBJECT];
     }
@@ -365,11 +369,12 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             throw uexc("Expected : , [");
         }
 
-        if (stackPointer >= stack.length) {
-            stack = Arrays.copyOf(stack, stack.length * 2);
+        if (currentStructureElement == null) {
+            currentStructureElement = new StructureElement(null, true);
+        } else {
+            final StructureElement localStructureElement = new StructureElement(currentStructureElement, true);
+            currentStructureElement = localStructureElement;
         }
-
-        stack[stackPointer++] = false;
 
         return EVT_MAP[event = START_ARRAY];
     }
@@ -381,10 +386,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             throw uexc("Expected [ ] } \" LITERAL");
         }
 
-        if (stackPointer < 1 || stack[stackPointer - 1]) {
-            throw uexc("Unbalanced container, expected }");
-        }
-        stackPointer--;
+        currentStructureElement = currentStructureElement.previous;
 
         return EVT_MAP[event = END_ARRAY];
     }
@@ -511,14 +513,9 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             }
 
             //check array context
-            if (stackPointer < 1 || stack[stackPointer - 1]) {
-                //not in array
-
-                if (event == COMMA_EVENT || event == VALUE_STRING) {
-                    //only allowed within array
-                    throw uexc("Not in an array context");
-                }
-
+            if ((event == COMMA_EVENT || event == VALUE_STRING) && !currentStructureElement.isArray) {
+                //not in array, only allowed within array
+                throw uexc("Not in an array context");
             }
 
             unread();
@@ -643,13 +640,9 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             throw uexc("Excpected : , [");
         }
 
-        if (event == COMMA_EVENT) {
+        if (event == COMMA_EVENT && !currentStructureElement.isArray) {
             //only allowed within array
-
-            if (stackPointer < 1 || stack[stackPointer - 1]) {
-                throw uexc("Not in an array context");
-            }
-
+            throw uexc("Not in an array context");
         }
 
         // probe literals
