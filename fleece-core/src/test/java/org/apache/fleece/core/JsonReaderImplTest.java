@@ -134,6 +134,7 @@ public class JsonReaderImplTest {
         assertTrue(object.getJsonNumber("w").doubleValue() > 4 && object.getJsonNumber("w").doubleValue() < 5);
         assertEquals(110, object.getInt("1.4312"));
         assertEquals("\"", object.getString("\""));
+        assertTrue(object.isNull("\u0044"));
         assertEquals("ন:4::,[{", object.getString("থii:üäöÖ.,;.-<>!§$%&()=?ß´'`*+#"));
         reader.close();
     }

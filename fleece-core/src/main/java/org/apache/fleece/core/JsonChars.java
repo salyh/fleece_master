@@ -70,7 +70,7 @@ public interface JsonChars {
     static final byte VALUE_NUMBER=(byte) Event.VALUE_NUMBER.ordinal(); 
     static final byte VALUE_TRUE=(byte) Event.VALUE_TRUE.ordinal();
     static final byte VALUE_FALSE=(byte) Event.VALUE_FALSE.ordinal(); 
-    static final byte VALUE_NULL=(byte) Event.VALUE_FALSE.ordinal();
+    static final byte VALUE_NULL=(byte) Event.VALUE_NULL.ordinal();
     static final byte END_OBJECT=(byte) Event.END_OBJECT.ordinal();
     static final byte END_ARRAY=(byte) Event.END_ARRAY.ordinal();
     

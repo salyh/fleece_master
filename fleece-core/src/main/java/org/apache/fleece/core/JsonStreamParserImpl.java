@@ -29,18 +29,30 @@ import javax.json.stream.JsonParsingException;
 /*
 
 Benchmark                                                       Mode   Samples        Score  Score error    Units
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3      101,783        4,515    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly100kChars           thrpt         3     1034,848       55,630    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly10kChars            thrpt         3    10428,278     6033,344    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1kChars             thrpt         3   105019,057    22400,196    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly3kChars             thrpt         3    36579,693     2383,375    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      204,281        5,169    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       55,277        8,277    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read100kChars                thrpt         3      573,250       84,506    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read10kChars                 thrpt         3     5715,976      966,425    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read1kChars                  thrpt         3    59745,484    11536,112    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read3kChars                  thrpt         3    19560,091     3034,515    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3      114,429       38,245    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3      101,512       27,308    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly100kChars           thrpt         3     1013,438     1557,746    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly10kChars            thrpt         3    10887,983      804,982    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1kChars             thrpt         3   108510,579     5722,074    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly3kChars             thrpt         3    36040,251     4577,012    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      209,152       11,026    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       55,018        3,102    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read100kChars                thrpt         3      561,215       59,528    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read10kChars                 thrpt         3     5852,519     1678,667    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1kChars                  thrpt         3    57701,785     8329,498    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read3kChars                  thrpt         3    19667,070     3074,550    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3      115,985       21,442    ops/s
+
+
+Filesize: 15534444484 bytes
+Duration: 220806 ms
+String Events: 420000000
+Integral Number Events: 300000000
+Big Decimal Events: 60000000
+Parsing speed: 70353 bytes/ms
+Parsing speed: 70611111 bytes/sec
+Parsing speed: 68956 kbytes/sec
+Parsing speed: 67 mb/sec
+Parsing speed: 538 mbit/sec
 
 */
 
@@ -738,6 +750,16 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             throw new IllegalStateException(event + " doesn't support getBigDecimal()");
         } else if (currentBigDecimalNumber != null) {
             return currentBigDecimalNumber;
+        } else if (isCurrentNumberIntegral && currentIntegralNumber != null) {
+            return new BigDecimal(currentIntegralNumber);
+        } else if (isCurrentNumberIntegral) {
+            final Long retVal = valueLength > 0 ? parseLongFromChars(currentValue, 0, valueLength) : parseLongFromChars(buffer, start, end);
+            if (retVal == null) {
+                return (currentBigDecimalNumber = valueLength > 0 ? new BigDecimal(currentValue, 0, valueLength) : new BigDecimal(buffer,
+                        start, (end - start)));
+            } else {
+                return (currentBigDecimalNumber = new BigDecimal(retVal.longValue()));
+            }
         } else {
             return (currentBigDecimalNumber = valueLength > 0 ? new BigDecimal(currentValue, 0, valueLength) : new BigDecimal(buffer,
                     start, (end - start)));
