@@ -54,8 +54,8 @@ public class Strings implements JsonChars {
                 if(Character.isHighSurrogate(current) || Character.isLowSurrogate(current)) {
                     return current;
                 }
-                throw new JsonParsingException("Invalid escape sequence "+current +"int:"+(int)current+"/cp"+String.valueOf(current).
-                        codePointAt(0)+Character.isSurrogate(current),new JsonLocationImpl(-1, -1, -1));
+                throw new JsonParsingException("Invalid escape sequence '"+current +"' (Codepoint: "+String.valueOf(current).
+                        codePointAt(0),JsonLocationImpl.UNKNOW_LOCATION);
         }
 
     }

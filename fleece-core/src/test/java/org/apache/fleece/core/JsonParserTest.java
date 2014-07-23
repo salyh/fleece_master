@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
+import java.io.CharArrayReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -35,9 +36,11 @@ import java.util.NoSuchElementException;
 
 import javax.json.Json;
 import javax.json.JsonArray;
+import javax.json.JsonException;
 import javax.json.JsonReader;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParser.Event;
+import javax.json.stream.JsonParserFactory;
 import javax.json.stream.JsonParsingException;
 
 import org.junit.Test;
@@ -45,7 +48,12 @@ import org.junit.Test;
 public class JsonParserTest {
     
     
-    
+    static final Charset UTF_8 = Charset.forName("UTF-8");
+    static final Charset UTF_16BE = Charset.forName("UTF-16BE");
+    static final Charset UTF_16LE = Charset.forName("UTF-16LE");
+    static final Charset UTF_16 = Charset.forName("UTF-16");
+    static final Charset UTF_32LE = Charset.forName("UTF-32LE");
+    static final Charset UTF_32BE = Charset.forName("UTF-32BE");
     
     public JsonParserTest() {
         super();
@@ -230,6 +238,21 @@ public class JsonParserTest {
         assertNotNull(parser);
         assertSimple(parser);
     }
+    
+    @Test
+    public void simpleUTF16LE() {
+        final JsonParser parser = Json.createParserFactory(null).createParser(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple_utf16le.json"),UTF_16LE);
+        assertNotNull(parser);
+        assertSimple(parser);
+    }
+    
+    @Test
+    public void simpleUTF16LEAutoDetect() {
+        final JsonParser parser = Json.createParserFactory(null).createParser(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple_utf16le.json"));
+        assertNotNull(parser);
+        assertSimple(parser);
+    }
+    
 
     @Test
     public void nested() {
@@ -727,11 +750,78 @@ public class JsonParserTest {
         Json.createReader(new ByteArrayInputStream("{\"z\":nulll}".getBytes())).read();
     }
     
-    @Test(expected = JsonParsingException.class)
+    @Test(expected = JsonException.class)
     public void zeroByteInput() {
         // using a reader as wrapper of parser
   
         Json.createReader(new ByteArrayInputStream(new byte[]{})).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void zeroCharInput() {
+        // using a reader as wrapper of parser
+  
+        Json.createReader(new CharArrayReader(new char[]{})).read();
+    }
+    
+    @Test
+    public void testUTF32LEStream() {
+        ByteArrayInputStream bin = new ByteArrayInputStream("[\"UTF32LE\"]".getBytes(UTF_32LE));
+        JsonParser parser = Json.createParser(bin);
+        parser.next();
+        parser.next();
+        assertEquals("UTF32LE", parser.getString());
+        parser.next();
+        assertTrue(!parser.hasNext());
+        parser.close();
+    }
+    
+    @Test
+    public void testUTF32BEStream() {
+        ByteArrayInputStream bin = new ByteArrayInputStream("[\"UTF32BE\"]".getBytes(UTF_32BE));
+        JsonParser parser = Json.createParser(bin);
+        parser.next();
+        parser.next();
+        assertEquals("UTF32BE", parser.getString());
+        parser.next();
+        assertTrue(!parser.hasNext());
+        parser.close();
+    }
+    
+    @Test
+    public void testUTF16BEStream() {
+        ByteArrayInputStream bin = new ByteArrayInputStream("[\"UTF16BE\"]".getBytes(UTF_16BE));
+        JsonParser parser = Json.createParser(bin);
+        parser.next();
+        parser.next();
+        assertEquals("UTF16BE", parser.getString());
+        parser.next();
+        assertTrue(!parser.hasNext());
+        parser.close();
+    }
+    
+    @Test
+    public void testUTF16LEStream() {
+        ByteArrayInputStream bin = new ByteArrayInputStream("[\"UTF16LE\"]".getBytes(UTF_16LE));
+        JsonParser parser = Json.createParser(bin);
+        parser.next();
+        parser.next();
+        assertEquals("UTF16LE", parser.getString());
+        parser.next();
+        assertTrue(!parser.hasNext());
+        parser.close();
+    }
+    
+    @Test
+    public void testUTF8Stream() {
+        ByteArrayInputStream bin = new ByteArrayInputStream("[\"UTF8\"]".getBytes(UTF_8));
+        JsonParser parser = Json.createParser(bin);
+        parser.next();
+        parser.next();
+        assertEquals("UTF8", parser.getString());
+        parser.next();
+        assertTrue(!parser.hasNext());
+        parser.close();
     }
     
     @Test
@@ -747,6 +837,40 @@ public class JsonParserTest {
         // using a reader as wrapper of parser
   
         assertEquals(0L, Json.createReader(new ByteArrayInputStream("  \n\n   [   0  ]  \n\n".getBytes())).readArray().getJsonNumber(0).longValue());
+    }
+    
+    @Test
+    public void escapeStart() {
+        // using a reader as wrapper of parser
+  
+        assertEquals("\\abcdef", Json.createReader(new ByteArrayInputStream("[\"\\\\abcdef\"]".getBytes())).readArray().getString(0));
+    }
+    
+    @Test
+    public void escapeStart2() {
+        // using a reader as wrapper of parser
+  
+        assertEquals("\"abcdef", Json.createReader(new ByteArrayInputStream("[\"\\\"abcdef\"]".getBytes())).readArray().getString(0));
+    }
+    
+    @Test
+    public void threeLiterals() {
+        final JsonParser parser = Json.createParserFactory(new HashMap<String, Object>() {{
+            put(JsonParserFactoryImpl.MAX_STRING_LENGTH, 10);
+        }}).createParser(new ByteArrayInputStream("{\"a\":true,\"b\":null,\"c\":false,\"arr\":[false, true, null]}".getBytes()));
+        parser.next();
+        parser.next();
+        assertEquals(JsonParser.Event.VALUE_TRUE, parser.next());
+        parser.next();
+        assertEquals(JsonParser.Event.VALUE_NULL, parser.next());
+        parser.next();
+        assertEquals(JsonParser.Event.VALUE_FALSE, parser.next());
+        parser.next();
+        parser.next();
+        assertEquals(JsonParser.Event.VALUE_FALSE, parser.next());
+        assertEquals(JsonParser.Event.VALUE_TRUE, parser.next());
+        assertEquals(JsonParser.Event.VALUE_NULL, parser.next());
+        parser.close();
     }
     
     
@@ -1167,7 +1291,7 @@ public class JsonParserTest {
         Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail58.json")).read();
     }
     
-    @Test(expected = JsonParsingException.class)
+    @Test(expected = JsonException.class)
     public void fail59() {
         
         Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail59.json")).read();

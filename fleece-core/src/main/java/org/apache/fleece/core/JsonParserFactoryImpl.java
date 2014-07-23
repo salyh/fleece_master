@@ -23,7 +23,6 @@ import javax.json.JsonObject;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParserFactory;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Serializable;
 import java.nio.charset.Charset;
@@ -63,7 +62,7 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
         if (name != null) {
             return BufferStrategy.valueOf(name.toString().toUpperCase(Locale.ENGLISH));
         }
-        return BufferStrategy.QUEUE;
+        return BufferStrategy.SINGLETON;
     }
 
     private int getInt(final String key) {
@@ -80,15 +79,17 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
     }
 
     private EscapedStringAwareJsonParser getDefaultJsonParserImpl(final InputStream in) {
-        return new JsonStreamParserImpl(
-            new InputStreamReader(in, Charset.defaultCharset()), maxSize, bufferProvider, valueBufferProvider);
+        //UTF Auto detection RFC 4627
+        return new JsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider);
     }
 
     private EscapedStringAwareJsonParser getDefaultJsonParserImpl(final InputStream in, final Charset charset) {
-        return new JsonStreamParserImpl(new InputStreamReader(in, charset), maxSize, bufferProvider, valueBufferProvider);
+        //use provided charset
+        return new JsonStreamParserImpl(in, charset, maxSize, bufferProvider, valueBufferProvider);
     }
 
     private EscapedStringAwareJsonParser getDefaultJsonParserImpl(final Reader in) {
+        //no charset necessary
         return new JsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider);
     }
 

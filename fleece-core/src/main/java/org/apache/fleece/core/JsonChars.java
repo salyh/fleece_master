@@ -75,6 +75,7 @@ public interface JsonChars {
     static final byte END_ARRAY=(byte) Event.END_ARRAY.ordinal();
     
     static final byte COMMA_EVENT=Byte.MAX_VALUE;
+    static final byte KEY_SEPARATOR_EVENT=Byte.MIN_VALUE;
     
     static final Event[] EVT_MAP =Event.values();
     
