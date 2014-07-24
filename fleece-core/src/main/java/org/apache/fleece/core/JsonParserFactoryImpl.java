@@ -62,7 +62,7 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
         if (name != null) {
             return BufferStrategy.valueOf(name.toString().toUpperCase(Locale.ENGLISH));
         }
-        return BufferStrategy.SINGLETON;
+        return BufferStrategy.QUEUE;
     }
 
     private int getInt(final String key) {

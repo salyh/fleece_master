@@ -651,7 +651,7 @@ public class JsonParserTest {
         parser.close();
     }
 
-    //@Test
+    @Test
     public void dosProtected() {
         // strings
         {
@@ -873,7 +873,7 @@ public class JsonParserTest {
         parser.close();
     }
     
-    
+    @Test
     public void maxStringStringOK() {
         // using a reader as wrapper of parser
         Json.createReaderFactory(new HashMap<String, Object>() {
@@ -895,6 +895,7 @@ public class JsonParserTest {
        
     }
     
+    @Test
     public void maxStringNumberOK() {
         // using a reader as wrapper of parser
         Json.createReaderFactory(new HashMap<String, Object>() {
