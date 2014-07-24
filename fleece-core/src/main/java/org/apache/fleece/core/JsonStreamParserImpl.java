@@ -32,53 +32,104 @@ import javax.json.stream.JsonParsingException;
 
 /*
 Benchmark                                                       Mode   Samples        Score  Score error    Units
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kBytes          thrpt         3       81,515        1,216    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3      114,589        5,518    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly100kBytes           thrpt         3      834,856       39,560    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly100kChars           thrpt         3     1171,849      107,308    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly10kBytes            thrpt         3     8135,038     1043,820    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly10kChars            thrpt         3    11702,990     2025,443    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1kBytes             thrpt         3    72652,185    60378,643    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1kChars             thrpt         3   122285,874    11881,270    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly3kBytes             thrpt         3    26396,945    13881,691    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly3kChars             thrpt         3    39625,055     9953,801    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedBytes500    thrpt         3      165,907       12,029    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      228,061       65,174    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read1000kBytes               thrpt         3       46,725       12,647    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       53,542       62,849    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read100kBytes                thrpt         3      492,922       74,269    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read100kChars                thrpt         3      602,476       74,936    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read10kBytes                 thrpt         3     4842,840     2255,149    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read10kChars                 thrpt         3     5687,168     2081,554    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read1kBytes                  thrpt         3    44955,530    10259,508    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read1kChars                  thrpt         3    59520,198     4779,533    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read3kChars                  thrpt         3    19556,130    11023,904    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.readCombinedBytes500         thrpt         3       96,905        4,120    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3      121,687       18,271    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read_3kBytes                 thrpt         3    16094,699     2614,593    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kBytes          thrpt         3       80,642       14,559    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3      119,313        2,596    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly100kBytes           thrpt         3      850,866       65,046    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly100kChars           thrpt         3     1200,910      149,421    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly10kBytes            thrpt         3     8346,978     1745,687    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly10kChars            thrpt         3    12021,721     2870,208    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1kBytes             thrpt         3    69676,255    12527,501    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1kChars             thrpt         3   123623,996     5030,742    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly3kBytes             thrpt         3    27909,386     2332,610    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly3kChars             thrpt         3    41227,225    17109,883    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedBytes500    thrpt         3      167,202       20,788    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      238,848       32,515    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1000kBytes               thrpt         3       47,492       14,908    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       53,937       46,436    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read100kBytes                thrpt         3      481,970       97,792    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read100kChars                thrpt         3      591,658       98,072    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read10kBytes                 thrpt         3     4730,009     2525,058    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read10kChars                 thrpt         3     6072,598     1796,577    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1kBytes                  thrpt         3    44679,227    12491,591    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1kChars                  thrpt         3    59533,842     9891,809    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read3kChars                  thrpt         3    19003,742    25029,267    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.readCombinedBytes500         thrpt         3       98,406       12,583    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3      119,386       17,314    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read_3kBytes                 thrpt         3    15627,612     2149,050    ops/s
+
+
+
 
 
 Filesize: 15534444484 bytes
-Duration: 224724 ms
+Duration: 200933 ms
 String Events: 420000000
 Integral Number Events: 300000000
 Big Decimal Events: 60000000
-Parsing speed: 69126 bytes/ms
-Parsing speed: 69350198 bytes/sec
-Parsing speed: 67724 kbytes/sec
-Parsing speed: 66 mb/sec
-Parsing speed: 529 mbit/sec
+Parsing speed: 77311 bytes/ms
+Parsing speed: 77672222 bytes/sec
+Parsing speed: 75851 kbytes/sec
+Parsing speed: 74 mb/sec
+Parsing speed: 592 mbit/sec
+
+
+
+
+
+---
+
+RI
+Benchmark
+Mode   Samples        Score  Score error    Units
+o.a.f.c.j.b.BenchmarkNumberConversion.convertIntegralBiparseInt
+thrpt         3  1688961,884   104546,662    ops/s
+o.a.f.c.j.b.BenchmarkNumberConversion.convertIntegralBiparseLong
+thrpt         3  1780295,394    42616,899    ops/s
+o.a.f.c.j.b.BenchmarkNumberConversion.convertIntegralJdkparseInt
+thrpt         3  4751379,912    42438,869    ops/s
+o.a.f.c.j.b.BenchmarkNumberConversion.convertIntegralJdkparseLong
+thrpt         3  3597525,248    69936,018    ops/s
+o.a.f.c.j.b.BenchmarkNumberConversion.convertIntegralSelfparseInt
+thrpt         3 29686109,916  3804948,224    ops/s
+o.a.f.c.j.b.BenchmarkNumberConversion.convertIntegralSelfparseLong
+thrpt         3 31932686,228  2290510,757    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly100000kChars
+thrpt         3        1,035        0,053    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars
+thrpt         3      107,709       11,543    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly100kChars
+thrpt         3     1051,968       87,474    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly10kChars
+thrpt         3    11649,630     1410,936    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1kChars
+thrpt         3   122516,956    10912,832    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly3kChars
+thrpt         3    41021,309     3577,667    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars
+thrpt         3      226,285       21,526    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read100000kChars
+thrpt         3        0,195        0,408    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars
+thrpt         3       58,485       15,718    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read100kChars
+thrpt         3      629,095      102,484    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read10kChars
+thrpt         3     6373,830     2214,334    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read3kChars
+thrpt         3    21378,658     8640,889    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars
+thrpt         3      121,686       22,588    ops/s
+
+
+
+
+
+
+
 
 */
 
-/* This class represents either the Json tokenizer and the Json parser.
- * 
- * 
- * 
- * 
- *
- */
-
+//This class represents either the Json tokenizer and the Json parser.
 public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonParser {
 
     //the main buffer where the stream will be buffered
