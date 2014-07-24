@@ -26,193 +26,215 @@ import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.NoSuchElementException;
 
+import javax.json.JsonException;
 import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParsingException;
 
 /*
- * 
- * 
- * 
- * 
 Benchmark                                                       Mode   Samples        Score  Score error    Units
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly100000kBytes        thrpt         3        0,731        0,099    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kBytes          thrpt         3       77,031       26,136    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3      106,176       29,816    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly100kBytes           thrpt         3      775,394       60,626    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly100kChars           thrpt         3     1096,151      348,039    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly10kBytes            thrpt         3     7007,801     4336,383    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly10kChars            thrpt         3     9463,456     2277,534    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1kBytes             thrpt         3    70305,369     7192,040    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1kChars             thrpt         3   109831,437    23695,623    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly3kBytes             thrpt         3    25069,773     1752,350    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnly3kChars             thrpt         3    36579,879    10951,550    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      218,397       14,476    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read100000kBytes             thrpt         3        0,209        0,693    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read1000kBytes               thrpt         3       46,410        6,841    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       56,037       14,586    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read100kBytes                thrpt         3      473,427       57,564    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read100kChars                thrpt         3      578,387      106,696    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read10kBytes                 thrpt         3     4609,200     2488,730    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read10kChars                 thrpt         3     5953,029     1167,553    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read1kBytes                  thrpt         3    44563,621     2865,639    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read1kChars                  thrpt         3    57045,880    28389,738    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read3kChars                  thrpt         3    19545,168     3920,916    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3      114,336       26,011    ops/s
-o.a.f.c.j.b.BenchmarkStreamParser.read_3kBytes                 thrpt         3    15478,833     2846,033    ops/s
-
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kBytes          thrpt         3       81,515        1,216    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1000kChars          thrpt         3      114,589        5,518    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly100kBytes           thrpt         3      834,856       39,560    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly100kChars           thrpt         3     1171,849      107,308    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly10kBytes            thrpt         3     8135,038     1043,820    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly10kChars            thrpt         3    11702,990     2025,443    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1kBytes             thrpt         3    72652,185    60378,643    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly1kChars             thrpt         3   122285,874    11881,270    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly3kBytes             thrpt         3    26396,945    13881,691    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnly3kChars             thrpt         3    39625,055     9953,801    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedBytes500    thrpt         3      165,907       12,029    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.parseOnlyCombinedChars500    thrpt         3      228,061       65,174    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1000kBytes               thrpt         3       46,725       12,647    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1000kChars               thrpt         3       53,542       62,849    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read100kBytes                thrpt         3      492,922       74,269    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read100kChars                thrpt         3      602,476       74,936    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read10kBytes                 thrpt         3     4842,840     2255,149    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read10kChars                 thrpt         3     5687,168     2081,554    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1kBytes                  thrpt         3    44955,530    10259,508    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read1kChars                  thrpt         3    59520,198     4779,533    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read3kChars                  thrpt         3    19556,130    11023,904    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.readCombinedBytes500         thrpt         3       96,905        4,120    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.readCombinedChars500         thrpt         3      121,687       18,271    ops/s
+o.a.f.c.j.b.BenchmarkStreamParser.read_3kBytes                 thrpt         3    16094,699     2614,593    ops/s
 
 
 Filesize: 15534444484 bytes
-Duration: 235535 ms
+Duration: 224724 ms
 String Events: 420000000
 Integral Number Events: 300000000
 Big Decimal Events: 60000000
-Parsing speed: 65953 bytes/ms
-Parsing speed: 66104019 bytes/sec
-Parsing speed: 64554 kbytes/sec
-Parsing speed: 63 mb/sec
-Parsing speed: 504 mbit/sec
-
-
-
-//TODO test location, also boundaries
-//TODO class documentation
-//big integer cache remove?
-//big integer instantiation from current integralvalue(getint/long
-//check api
+Parsing speed: 69126 bytes/ms
+Parsing speed: 69350198 bytes/sec
+Parsing speed: 67724 kbytes/sec
+Parsing speed: 66 mb/sec
+Parsing speed: 529 mbit/sec
 
 */
 
+/* This class represents either the Json tokenizer and the Json parser.
+ * 
+ * 
+ * 
+ * 
+ *
+ */
+
 public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonParser {
 
+    //the main buffer where the stream will be buffered
     private final char[] buffer;
+
+    //current parser position within the buffer
+    //Initial MIN_VALUE will trigger buffer refill, normally bufferPos is >= -1
+    //-1 would cause a re-read of the first character in the buffer (which is at zero index)
+    private int bufferPos = Integer.MIN_VALUE;
+
+    //available character in the buffer
+    //normally this is buffer.length, except for the last buffer page it might be <= buffer.length
+    private int availableCharsInBuffer;
+
+    //start and end position of values in the buffer
+    //may cross boundaries, then value is in fallBackCopyBuffer
+    private int startOfValueInBuffer = -1;
+    private int endOfValueInBuffer = -1;
+
     private final Reader in;
+
+    //do we read from a character stream or a byte stream
+    //not used at the moment but maybe relevant in future to calculate the JsonLocation offset
+    @SuppressWarnings("unused")
     private final boolean readBytes;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
     private final BufferStrategy.BufferProvider<char[]> valueProvider;
-    private int pointer = Integer.MIN_VALUE;
-    private boolean unread;
 
-    private final int maxStringSize;
+    //max length for strings and numbers (max count of characters)
+    private final int maxValueLength;
 
-    // current state
-    private byte event = 0;
+    //we use a byte here, because comparing bytes
+    //is more efficient than comparing enums
+    //Additionally we handle internally two more event: COMMA_EVENT and KEY_SEPARATOR_EVENT
+    private byte previousEvent;
 
-    private final char[] currentValue;
-    private int valueLength = 0;
+    //this buffer is used to store current String or Number value in case that
+    //within the value a buffer boundary is crossed or the string contains escaped characters
+    private final char[] fallBackCopyBuffer;
+    private int fallBackCopyBufferLength;
 
-    // location
-    private long line = 1;
-    private long column = 1;
-    private long offset = 0;
+    // location (line, column, offset)
+    // We try to calculate this efficiently so we do not just increment the values per char read
+    // Instead we calculate the column and offset relative to the pastBufferReadCount and/or lastLineBreakPosition.
+    private long currentLine = 1;
+    private long lastLineBreakPosition;
+    private long pastBufferReadCount;
 
-    private boolean isCurrentNumberIntegral = false;
-    private Integer currentIntegralNumber = null; //for number from 0 - 9
-    private BigDecimal currentBigDecimalNumber = null;
-    private int avail;
-    private int start = -1;
-    private int end = -1;
+    //cache (if current value is a number) integral state and the number itself if its only one digit    
+    private boolean isCurrentNumberIntegral = true;
+    private Integer currentIntegralNumber; //for number from 0 - 9
 
-    //we need a stack if we want detect bad formatted json do determine if we are within an array or not
+    //maybe we want also cache BigDecimals
+    //private BigDecimal currentBigDecimalNumber = null;
+
+    //We need a stack if we want detect bad formatted Json do determine if we are within an array or not
     //example
-    //     Streamparser sees: ],1
+    //     Streamparser sees: ],1  <-- we look from here
     //the 1 is only allowed if we are within an array
-    //IMHO this can only be determined by build up a stack which tracks the trail of json objects and arrays
+    //This can only be determined by build up a stack which tracks the trail of Json objects and arrays
+    //This stack here is only needed for validating the above mentioned case, if we want to be lenient we can skip suing the stack.
+    //Stack can cause out of memory issues when the nesting depth of a Json stream is too deep.
     private StructureElement currentStructureElement = null;
 
+    //minimal stack implementation
     private static final class StructureElement {
         final StructureElement previous;
         final boolean isArray;
 
-        public StructureElement(final StructureElement previous, final boolean isArray) {
+        StructureElement(final StructureElement previous, final boolean isArray) {
             super();
             this.previous = previous;
             this.isArray = isArray;
         }
     }
-    
 
-    public JsonStreamParserImpl(final InputStream inputStream, final int maxStringLength, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final BufferStrategy.BufferProvider<char[]> valueBuffer) {
+    //detect charset according to RFC 4627
+    public JsonStreamParserImpl(final InputStream inputStream, final int maxStringLength,
+            final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer) {
 
-        this.readBytes=true;
-        this.maxStringSize = maxStringLength <= 0 ? 8192 : maxStringLength;
-        this.currentValue = valueBuffer.newBuffer();
-
-        this.in = new UTFEncodingAwareReader(inputStream);
-        this.buffer = bufferProvider.newBuffer();
-        this.bufferProvider = bufferProvider;
-        this.valueProvider = valueBuffer;
-
-        if (currentValue.length < maxStringLength) {
-            throw cust("Size of value buffer cannot be smaller than maximum string length");
-        }
+        this(inputStream, null, null, maxStringLength, bufferProvider, valueBuffer);
     }
 
-    public JsonStreamParserImpl(final InputStream inputStream, final Charset encoding, final int maxStringLength, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final BufferStrategy.BufferProvider<char[]> valueBuffer) {
+    //use charset provided
+    public JsonStreamParserImpl(final InputStream inputStream, final Charset encoding, final int maxStringLength,
+            final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer) {
 
-        this.readBytes=true;
-        this.maxStringSize = maxStringLength <= 0 ? 8192 : maxStringLength;
-        this.currentValue = valueBuffer.newBuffer();
-
-        this.in = new InputStreamReader(inputStream, encoding.newDecoder());
-        this.buffer = bufferProvider.newBuffer();
-        this.bufferProvider = bufferProvider;
-        this.valueProvider = valueBuffer;
-
-        if (currentValue.length < maxStringLength) {
-            throw cust("Size of value buffer cannot be smaller than maximum string length");
-        }
+        this(inputStream, null, encoding, maxStringLength, bufferProvider, valueBuffer);
     }
-    
+
     public JsonStreamParserImpl(final Reader reader, final int maxStringLength, final BufferStrategy.BufferProvider<char[]> bufferProvider,
             final BufferStrategy.BufferProvider<char[]> valueBuffer) {
 
-        this.readBytes=false;
-        this.maxStringSize = maxStringLength <= 0 ? 8192 : maxStringLength;
-        this.currentValue = valueBuffer.newBuffer();
+        this(null, reader, null, maxStringLength, bufferProvider, valueBuffer);
+    }
 
-        this.in = reader;
+    private JsonStreamParserImpl(final InputStream inputStream, final Reader reader, final Charset encoding, final int maxStringLength,
+            final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer) {
+
+        this.maxValueLength = maxStringLength <= 0 ? 8192 : maxStringLength;
+        this.fallBackCopyBuffer = valueBuffer.newBuffer();
         this.buffer = bufferProvider.newBuffer();
         this.bufferProvider = bufferProvider;
         this.valueProvider = valueBuffer;
 
-        if (currentValue.length < maxStringLength) {
+        if (fallBackCopyBuffer.length < maxStringLength) {
             throw cust("Size of value buffer cannot be smaller than maximum string length");
         }
+
+        if (reader != null) {
+            this.in = reader;
+            readBytes = false;
+        } else if (encoding == null) {
+            this.in = new RFC4627AwareInputStreamReader(inputStream);
+            readBytes = true;
+
+        } else {
+            this.in = new InputStreamReader(inputStream, encoding.newDecoder());
+            readBytes = true;
+        }
+
     }
 
-    private void appendValue(final char c) {
-        currentValue[valueLength] = c;
-        valueLength++;
+    //append a single char to the value buffer
+    private void appendToCopyBuffer(final char c) {
+        fallBackCopyBuffer[fallBackCopyBufferLength] = c;
+        fallBackCopyBufferLength++;
     }
 
-    private void copyValues() {
+    //copy content between "start" and "end" from buffer to value buffer 
+    private void copyCurrentValue() {
 
-        if ((end - start) > 0) {
+        if ((endOfValueInBuffer - startOfValueInBuffer) > 0) {
 
-            if ((end - start) > maxStringSize) {
+            if ((endOfValueInBuffer - startOfValueInBuffer) > maxValueLength) {
                 throw tmc();
             }
 
-            System.arraycopy(buffer, start, currentValue, valueLength, (end - start));
-            valueLength += (end - start);
+            System.arraycopy(buffer, startOfValueInBuffer, fallBackCopyBuffer, fallBackCopyBufferLength,
+                    (endOfValueInBuffer - startOfValueInBuffer));
+            fallBackCopyBufferLength += (endOfValueInBuffer - startOfValueInBuffer);
 
         }
 
-        start = end = -1;
+        startOfValueInBuffer = endOfValueInBuffer = -1;
     }
 
     @Override
     public final boolean hasNext() {
 
-        if (currentStructureElement != null || (event != END_ARRAY && event != END_OBJECT) || event == 0) {
+        if (currentStructureElement != null || (previousEvent != END_ARRAY && previousEvent != END_OBJECT) || previousEvent == 0) {
             return true;
         }
 
-        //detect garbage at the end of the file after structure is closed
-        if (pointer < avail - 2) {
+        //detect garbage at the end of the file after last object or array is closed
+        if (bufferPos < availableCharsInBuffer - 2) {
 
             final char c = readNextNonWhitespaceChar();
 
@@ -220,7 +242,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
                 return false;
             }
 
-            if (pointer < avail) {
+            if (bufferPos < availableCharsInBuffer) {
                 throw uexc("EOF expected");
             }
 
@@ -234,6 +256,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
         return value <= NINE && value >= ZERO;
     }
 
+    //check if value is a valid hex digit and return the numeric value
     private int parseHexDigit(final char value) {
 
         if (isAsciiDigit(value)) {
@@ -247,41 +270,51 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
         }
     }
 
-    private JsonLocationImpl createLocation() {
-        return new JsonLocationImpl(line, column, offset);
+    private JsonLocation createLocation() {
+
+        //we start with column = 1, so column is always >= 1
+        //APi is not clear in this, but starting column with 1 is convenient
+        long column = 1;
+        long charOffset = 0;
+
+        if (bufferPos >= -1) {
+
+            charOffset = pastBufferReadCount + bufferPos + 1;
+            column = lastLineBreakPosition == 0 ? charOffset + 1 : charOffset - lastLineBreakPosition;
+        }
+
+        //For now its unclear how to calculate offset for (byte) inputsream.
+        //API says count bytes but thats dependent on encoding and not efficient
+        //skip this for now, count always bytes and defer this until the JSR TCK arrives.
+
+        return new JsonLocationImpl(currentLine, column, charOffset);
     }
 
-    /*private void unread() {
-        unread = true;
-    }*/
+    //read the next char from the stream and set/increment the bufferPos
+    //will also refill buffer if neccessary
+    //if we are currently processing a value (string or number) and buffer 
+    //refill is neccessary copy the already readed value part into the value buffer
+    private char readNextChar() {
 
-    private char read() {
-
-        /*if (unread && pointer >= 0) {
-            unread = false;
-            return buffer[pointer];
-        } else  
-          */  
-            
-       if ((buffer.length - pointer) <= 1) {
+        if ((buffer.length - bufferPos) <= 1) {
             //fillbuffer
 
-           //copy content from old buffer to valuebuffer
-           //correct start end mark
-           if (start > -1 && end == -1) {
-               end = avail;
-               copyValues();
+            //copy content from old buffer to valuebuffer
+            //correct start end mark
+            if (startOfValueInBuffer > -1 && endOfValueInBuffer == -1) {
+                endOfValueInBuffer = availableCharsInBuffer;
+                copyCurrentValue();
 
-               start = 0;
-           }
-           
-           
+                startOfValueInBuffer = 0;
+            }
+
+            if (bufferPos >= -1) {
+                pastBufferReadCount += availableCharsInBuffer;
+            }
+
             try {
-
-
-
-                avail = in.read(buffer, 0, buffer.length);
-                if (avail <= 0) {
+                availableCharsInBuffer = in.read(buffer, 0, buffer.length);
+                if (availableCharsInBuffer <= 0) {
                     return EOF;
                 }
 
@@ -290,47 +323,38 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
                 throw uexio(e);
             }
 
-            pointer = 0;
+            bufferPos = 0;
             //end fillbuffer
         } else {
-            pointer++;
+            bufferPos++;
         }
 
-       /* if(readBytes) {
-            
-           // Character.
-            offset++;
-        } else {
-            offset++;
-        }
-        */
-        
-        offset++;
-        column++;
-
-        return buffer[pointer];
+        return buffer[bufferPos];
     }
 
+    //skip whitespaces
+    //tracks location informations (line, column)
+    //returns the first non whitespace character
     private char readNextNonWhitespaceChar() {
 
         int dosCount = 0;
-        char c = read();
+        char c = readNextChar();
 
         while (c == SPACE || c == TAB || c == CR || c == EOL) {
 
             if (c == EOL) {
-                line++;
-                column = 0;
+                currentLine++;
+                lastLineBreakPosition = pastBufferReadCount + bufferPos;
             }
 
             //prevent DOS (denial of service) attack
-            if (dosCount >= maxStringSize) {
+            if (dosCount >= maxValueLength) {
                 throw tmc();
             }
             dosCount++;
 
             //read next character
-            c = read();
+            c = readNextChar();
 
         }
 
@@ -339,12 +363,13 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     @Override
     public final Event next() {
+        //main entry, make decision how to handle the current character in the stream
 
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
 
-        if (event != 0 && currentStructureElement == null) {
+        if (previousEvent != 0 && currentStructureElement == null) {
             throw uexc("Unexpected end of structure");
         }
 
@@ -353,22 +378,22 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
         if (c == COMMA) {
 
             //last event must one of the following-> " ] } LITERAL
-            if (event == START_ARRAY || event == START_OBJECT || event == COMMA_EVENT || event == KEY_NAME) {
+            if (previousEvent == START_ARRAY || previousEvent == START_OBJECT || previousEvent == COMMA_EVENT || previousEvent == KEY_NAME) {
                 throw uexc("Expected \" ] } LITERAL");
             }
 
-            event = COMMA_EVENT;
+            previousEvent = COMMA_EVENT;
             return next();
 
         }
 
         if (c == KEY_SEPARATOR) {
 
-            if (event != KEY_NAME) {
+            if (previousEvent != KEY_NAME) {
                 throw uexc("A : can only follow a key name");
             }
 
-            event = KEY_SEPARATOR_EVENT;
+            previousEvent = KEY_SEPARATOR_EVENT;
             return next();
 
         }
@@ -376,18 +401,18 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
         if (!isCurrentNumberIntegral) {
             isCurrentNumberIntegral = true;
         }
-        if (currentBigDecimalNumber != null) {
-            currentBigDecimalNumber = null;
-        }
+        //        if (currentBigDecimalNumber != null) {
+        //            currentBigDecimalNumber = null;
+        //        }
         if (currentIntegralNumber != null) {
             currentIntegralNumber = null;
         }
 
-        if (valueLength != 0) {
-            valueLength = 0;
+        if (fallBackCopyBufferLength != 0) {
+            fallBackCopyBufferLength = 0;
         }
 
-        start = end = -1;
+        startOfValueInBuffer = endOfValueInBuffer = -1;
 
         switch (c) {
 
@@ -437,10 +462,11 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
     private Event handleStartObject() {
 
         //last event must one of the following-> : , [
-        if (event != 0 && event != KEY_SEPARATOR_EVENT && event != START_ARRAY && event != COMMA_EVENT) {
+        if (previousEvent != 0 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
             throw uexc("Excpected : , [");
         }
 
+        //push upon the stack
         if (currentStructureElement == null) {
             currentStructureElement = new StructureElement(null, false);
         } else {
@@ -448,30 +474,36 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             currentStructureElement = localStructureElement;
         }
 
-        return EVT_MAP[event = START_OBJECT];
+        return EVT_MAP[previousEvent = START_OBJECT];
 
     }
 
     private Event handleEndObject() {
 
         //last event must one of the following-> " ] { } LITERAL
-        if (event == START_ARRAY || event == COMMA_EVENT || event == KEY_NAME || event == KEY_SEPARATOR_EVENT
-                || currentStructureElement == null) {
+        if (previousEvent == START_ARRAY || previousEvent == COMMA_EVENT || previousEvent == KEY_NAME
+                || previousEvent == KEY_SEPARATOR_EVENT || currentStructureElement == null) {
             throw uexc("Expected \" ] { } LITERAL");
         }
 
+        if (currentStructureElement.isArray) {
+            throw uexc("Expected : ]");
+        }
+
+        //pop from stack
         currentStructureElement = currentStructureElement.previous;
 
-        return EVT_MAP[event = END_OBJECT];
+        return EVT_MAP[previousEvent = END_OBJECT];
     }
 
     private Event handleStartArray() {
 
         //last event must one of the following-> : , [
-        if (event != 0 && event != KEY_SEPARATOR_EVENT && event != START_ARRAY && event != COMMA_EVENT) {
+        if (previousEvent != 0 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
             throw uexc("Expected : , [");
         }
 
+        //push upon the stack
         if (currentStructureElement == null) {
             currentStructureElement = new StructureElement(null, true);
         } else {
@@ -479,29 +511,39 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             currentStructureElement = localStructureElement;
         }
 
-        return EVT_MAP[event = START_ARRAY];
+        return EVT_MAP[previousEvent = START_ARRAY];
     }
 
     private Event handleEndArray() {
 
         //last event must one of the following-> [ ] } " LITERAL
-        if (event == START_OBJECT || event == COMMA_EVENT || event == KEY_SEPARATOR_EVENT || currentStructureElement == null) {
+        if (previousEvent == START_OBJECT || previousEvent == COMMA_EVENT || previousEvent == KEY_SEPARATOR_EVENT
+                || currentStructureElement == null) {
             throw uexc("Expected [ ] } \" LITERAL");
         }
 
+        if (!currentStructureElement.isArray) {
+            throw uexc("Expected : }");
+        }
+
+        //pop from stack
         currentStructureElement = currentStructureElement.previous;
 
-        return EVT_MAP[event = END_ARRAY];
+        return EVT_MAP[previousEvent = END_ARRAY];
     }
 
+    //read a string, gets called recursively
+    //Handles escape/d characters
+    //if string contains escape chars and/or cross buffer boundary then copy in the value buffer
+    //if not then denote string start and end in startOfValueInBuffer and endOfValueInBuffer and read directly from buffer
     private void readString() {
 
-        char n = read();
+        char n = readNextChar();
         //when first called n its first char after the starting quote
         //after that its the next character after the while loop below
 
         if (n == QUOTE) {
-            end = start = pointer; //->"" case
+            endOfValueInBuffer = startOfValueInBuffer = bufferPos; //->"" case
             return;
         } else if (n == EOL) {
             throw uexc("Unexpected linebreak");
@@ -511,39 +553,40 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
         } else if (n == ESCAPE_CHAR) {
 
-            n = read();
+            n = readNextChar();
 
             //  \ u XXXX -> unicode char
             if (n == 'u') {
                 n = parseUnicodeHexChars();
-                appendValue(n);
+                appendToCopyBuffer(n);
 
                 // \\ -> \
             } else if (n == ESCAPE_CHAR) {
-                appendValue(n);
+                appendToCopyBuffer(n);
 
+                //another escape chars, for example \t
             } else {
-                appendValue(Strings.asEscapedChar(n));
+                appendToCopyBuffer(Strings.asEscapedChar(n));
 
             }
 
         } else {
 
-            start = pointer;
-            end = -1;
+            startOfValueInBuffer = bufferPos;
+            endOfValueInBuffer = -1;
 
-            while ((n = read()) > '\u001F' && n != ESCAPE_CHAR && n != EOL && n != QUOTE) {
+            while ((n = readNextChar()) > '\u001F' && n != ESCAPE_CHAR && n != EOL && n != QUOTE) {
                 //read fast
             }
 
-            end = pointer;
+            endOfValueInBuffer = bufferPos;
 
             if (n == QUOTE) {
 
-                if (valueLength > 0) {
-                    copyValues();
+                if (fallBackCopyBufferLength > 0) {
+                    copyCurrentValue();
                 } else {
-                    if ((end - start) > maxStringSize) {
+                    if ((endOfValueInBuffer - startOfValueInBuffer) > maxValueLength) {
                         throw tmc();
                     }
 
@@ -557,18 +600,21 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
                 throw uexc("Unescaped control character");
             }
 
-            copyValues();
+            copyCurrentValue();
 
             //current n is one of < '\u001F' -OR- ESCAPE_CHAR -OR- EOL -OR- QUOTE
-            //unread();
-            
-            pointer--;
+
+            bufferPos--; //unread one char
 
         }
 
+        //recurse until string is terminated by a non escaped quote
         readString();
 
     }
+
+    //maybe we want to check invalid utf encoding
+    //not clear yet if the InputStreamReader is doing that
 
     /*
     private char checkSurrogates(char n, char highSurrogate) {
@@ -595,9 +641,11 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
         return highSurrogate;
     }*/
 
+    //read the next four chars, check them and treat them as an single unicode char
     private char parseUnicodeHexChars() {
         // \u08Ac etc       
-        return (char) (((parseHexDigit(read())) * 4096) + ((parseHexDigit(read())) * 256) + ((parseHexDigit(read())) * 16) + ((parseHexDigit(read()))));
+        return (char) (((parseHexDigit(readNextChar())) * 4096) + ((parseHexDigit(readNextChar())) * 256)
+                + ((parseHexDigit(readNextChar())) * 16) + ((parseHexDigit(readNextChar()))));
 
     }
 
@@ -606,14 +654,16 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
         //always the beginning quote of a key or value  
 
         //last event must one of the following-> : { [ ,
-        if (event != KEY_SEPARATOR_EVENT && event != START_OBJECT && event != START_ARRAY && event != COMMA_EVENT) {
+        if (previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_OBJECT && previousEvent != START_ARRAY
+                && previousEvent != COMMA_EVENT) {
             throw uexc("Expected : { [ ,");
         }
         //starting quote already consumed
         readString();
         //end quote already consumed
 
-        if (event == KEY_SEPARATOR_EVENT) {
+        //make the decision if its an key or value
+        if (previousEvent == KEY_SEPARATOR_EVENT) {
             //must be value
 
             if (currentStructureElement != null && currentStructureElement.isArray) {
@@ -621,56 +671,60 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
                 throw uexc("Key value pair not allowed in an array");
             }
 
-            return EVT_MAP[event = VALUE_STRING];
+            return EVT_MAP[previousEvent = VALUE_STRING];
 
         } else { //Event is  START_OBJECT  OR START_ARRAY OR COMMA_EVENT
             //must be a key if we are in an object, if not its a value 
 
             if (currentStructureElement != null && currentStructureElement.isArray) {
-                return EVT_MAP[event = VALUE_STRING];
+                return EVT_MAP[previousEvent = VALUE_STRING];
             }
 
-            return EVT_MAP[event = KEY_NAME];
+            return EVT_MAP[previousEvent = KEY_NAME];
         }
 
     }
 
+    //read a number
+    //if a number cross buffer boundary then copy in the value buffer
+    //if not then denote string start and end in startOfValueInBuffer and endOfValueInBuffer and read directly from buffer
     private void readNumber(final char c) {
 
         //start can change on any read() if we cross buffer boundary
-        start = pointer;
-        end = -1;
+        startOfValueInBuffer = bufferPos;
+        endOfValueInBuffer = -1;
 
         char y = EOF;
 
-        int digitCount = 0;
-        while (isAsciiDigit(y = read())) {
+        //sum up the digit values 
+        int cumulatedDigitValue = 0;
+        while (isAsciiDigit(y = readNextChar())) {
 
             if (c == ZERO) {
                 throw uexc("Leading zeros not allowed");
             }
 
-            if (c == MINUS && digitCount == 48) {
+            if (c == MINUS && cumulatedDigitValue == 48) {
                 throw uexc("Leading zeros after minus not allowed");
             }
 
-            digitCount += y;
+            cumulatedDigitValue += y;
 
         }
 
-        if (c == MINUS && digitCount == 0) {
+        if (c == MINUS && cumulatedDigitValue == 0) {
 
             throw uexc("Unexpected premature end of number");
         }
 
         if (y == DOT) {
             isCurrentNumberIntegral = false;
-            digitCount = 0;
-            while (isAsciiDigit(y = read())) {
-                digitCount++;
+            cumulatedDigitValue = 0;
+            while (isAsciiDigit(y = readNextChar())) {
+                cumulatedDigitValue++;
             }
 
-            if (digitCount == 0) {
+            if (cumulatedDigitValue == 0) {
 
                 throw uexc("Unexpected premature end of number");
             }
@@ -680,57 +734,53 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
         if (y == EXP_LOWERCASE || y == EXP_UPPERCASE) {
             isCurrentNumberIntegral = false;
 
-            y = read(); //+ or - or digit
+            y = readNextChar(); //+ or - or digit
 
             if (!isAsciiDigit(y) && y != MINUS && y != PLUS) {
                 throw uexc("Expected DIGIT or + or -");
             }
 
             if (y == MINUS || y == PLUS) {
-                y = read();
+                y = readNextChar();
                 if (!isAsciiDigit(y)) {
                     throw uexc("Unexpected premature end of number");
                 }
 
             }
 
-            while (isAsciiDigit(y = read())) {
+            while (isAsciiDigit(y = readNextChar())) {
                 //no-op
             }
 
         }
 
-        end = pointer;
+        endOfValueInBuffer = bufferPos;
 
         if (y == COMMA || y == END_ARRAY_CHAR || y == END_OBJECT_CHAR || y == EOL || y == SPACE || y == TAB || y == CR) {
 
-            if (y == COMMA || y == END_ARRAY_CHAR || y == END_OBJECT_CHAR) {
-                
-               
-                pointer--;//unread();
-            }
+            bufferPos--;//unread one char
 
-            //currentValue ['-', DIGIT]
-            if (isCurrentNumberIntegral && c == MINUS && digitCount >= 48 && digitCount <= 57) {
+            //['-', DIGIT]
+            if (isCurrentNumberIntegral && c == MINUS && cumulatedDigitValue >= 48 && cumulatedDigitValue <= 57) {
 
-                currentIntegralNumber = -(digitCount - 48); //optimize -0 till -9
+                currentIntegralNumber = -(cumulatedDigitValue - 48); //optimize -0 till -9
                 return;
             }
 
-            //currentValue [DIGIT]
-            if (isCurrentNumberIntegral && c != MINUS && digitCount == 0) {
+            //[DIGIT]
+            if (isCurrentNumberIntegral && c != MINUS && cumulatedDigitValue == 0) {
 
                 currentIntegralNumber = (c - 48); //optimize 0 till 9
                 return;
             }
 
-            if (valueLength > 0) {
+            if (fallBackCopyBufferLength > 0) {
 
                 //we crossed a buffer boundary, use value buffer
-                copyValues();
+                copyCurrentValue();
 
             } else {
-                if ((end - start) >= maxStringSize) {
+                if ((endOfValueInBuffer - startOfValueInBuffer) >= maxValueLength) {
                     throw tmc();
                 }
             }
@@ -743,14 +793,15 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     }
 
+    //handles false, true, null and numbers
     private Event handleLiteral(final char c) {
 
         //last event must one of the following-> : , [
-        if (event != KEY_SEPARATOR_EVENT && event != START_ARRAY && event != COMMA_EVENT) {
+        if (previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
             throw uexc("Excpected : , [");
         }
 
-        if (event == COMMA_EVENT && !currentStructureElement.isArray) {
+        if (previousEvent == COMMA_EVENT && !currentStructureElement.isArray) {
             //only allowed within array
             throw uexc("Not in an array context");
         }
@@ -759,46 +810,49 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
         switch (c) {
             case TRUE_T:
 
-                if (read() != TRUE_R || read() != TRUE_U || read() != TRUE_E) {
+                if (readNextChar() != TRUE_R || readNextChar() != TRUE_U || readNextChar() != TRUE_E) {
                     throw uexc("Expected LITERAL: true");
                 }
-                return EVT_MAP[event = VALUE_TRUE];
+                return EVT_MAP[previousEvent = VALUE_TRUE];
             case FALSE_F:
 
-                if (read() != FALSE_A || read() != FALSE_L || read() != FALSE_S || read() != FALSE_E) {
+                if (readNextChar() != FALSE_A || readNextChar() != FALSE_L || readNextChar() != FALSE_S || readNextChar() != FALSE_E) {
                     throw uexc("Expected LITERAL: false");
                 }
 
-                return EVT_MAP[event = VALUE_FALSE];
+                return EVT_MAP[previousEvent = VALUE_FALSE];
 
             case NULL_N:
 
-                if (read() != NULL_U || read() != NULL_L || read() != NULL_L) {
+                if (readNextChar() != NULL_U || readNextChar() != NULL_L || readNextChar() != NULL_L) {
                     throw uexc("Expected LITERAL: null");
                 }
-                return EVT_MAP[event = VALUE_NULL];
+                return EVT_MAP[previousEvent = VALUE_NULL];
 
             default:
                 readNumber(c);
-                return EVT_MAP[event = VALUE_NUMBER];
+                return EVT_MAP[previousEvent = VALUE_NUMBER];
         }
 
     }
 
     @Override
     public String getString() {
-        if (event == KEY_NAME || event == VALUE_STRING || event == VALUE_NUMBER) {
-            return valueLength > 0 ? new String(currentValue, 0, valueLength) : new String(buffer, start, end - start);//TODO read from buffer in special cases
+        if (previousEvent == KEY_NAME || previousEvent == VALUE_STRING || previousEvent == VALUE_NUMBER) {
+
+            //if there a content in the value buffer read from them, if not use main buffer
+            return fallBackCopyBufferLength > 0 ? new String(fallBackCopyBuffer, 0, fallBackCopyBufferLength) : new String(buffer,
+                    startOfValueInBuffer, endOfValueInBuffer - startOfValueInBuffer);
         } else {
-            throw new IllegalStateException(EVT_MAP[event] + " doesn't support getString()");
+            throw new IllegalStateException(EVT_MAP[previousEvent] + " doesn't support getString()");
         }
     }
 
     @Override
     public boolean isIntegralNumber() {
 
-        if (event != VALUE_NUMBER) {
-            throw new IllegalStateException(EVT_MAP[event] + " doesn't support isIntegralNumber()");
+        if (previousEvent != VALUE_NUMBER) {
+            throw new IllegalStateException(EVT_MAP[previousEvent] + " doesn't support isIntegralNumber()");
         } else {
             return isCurrentNumberIntegral;
         }
@@ -806,13 +860,14 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     @Override
     public int getInt() {
-        if (event != VALUE_NUMBER) {
-            throw new IllegalStateException(EVT_MAP[event] + " doesn't support getInt()");
+        if (previousEvent != VALUE_NUMBER) {
+            throw new IllegalStateException(EVT_MAP[previousEvent] + " doesn't support getInt()");
         } else if (isCurrentNumberIntegral && currentIntegralNumber != null) {
             return currentIntegralNumber;
         } else if (isCurrentNumberIntegral) {
-            final Integer retVal = valueLength > 0 ? parseIntegerFromChars(currentValue, 0, valueLength) : parseIntegerFromChars(buffer,
-                    start, end);
+            //if there a content in the value buffer read from them, if not use main buffer
+            final Integer retVal = fallBackCopyBufferLength > 0 ? parseIntegerFromChars(fallBackCopyBuffer, 0, fallBackCopyBufferLength)
+                    : parseIntegerFromChars(buffer, startOfValueInBuffer, endOfValueInBuffer);
             if (retVal == null) {
                 return getBigDecimal().intValue();
             } else {
@@ -825,12 +880,14 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     @Override
     public long getLong() {
-        if (event != VALUE_NUMBER) {
-            throw new IllegalStateException(EVT_MAP[event] + " doesn't support getLong()");
+        if (previousEvent != VALUE_NUMBER) {
+            throw new IllegalStateException(EVT_MAP[previousEvent] + " doesn't support getLong()");
         } else if (isCurrentNumberIntegral && currentIntegralNumber != null) {
             return currentIntegralNumber;
         } else if (isCurrentNumberIntegral) {
-            final Long retVal = valueLength > 0 ? parseLongFromChars(currentValue, 0, valueLength) : parseLongFromChars(buffer, start, end);
+            //if there a content in the value buffer read from them, if not use main buffer
+            final Long retVal = fallBackCopyBufferLength > 0 ? parseLongFromChars(fallBackCopyBuffer, 0, fallBackCopyBufferLength)
+                    : parseLongFromChars(buffer, startOfValueInBuffer, endOfValueInBuffer);
             if (retVal == null) {
                 return getBigDecimal().longValue();
             } else {
@@ -844,23 +901,27 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     @Override
     public BigDecimal getBigDecimal() {
-        if (event != VALUE_NUMBER) {
-            throw new IllegalStateException(EVT_MAP[event] + " doesn't support getBigDecimal()");
-        } else if (currentBigDecimalNumber != null) {
-            return currentBigDecimalNumber;
+        if (previousEvent != VALUE_NUMBER) {
+            throw new IllegalStateException(EVT_MAP[previousEvent] + " doesn't support getBigDecimal()");
+            //        } else if (currentBigDecimalNumber != null) {
+            //            return currentBigDecimalNumber;
         } else if (isCurrentNumberIntegral && currentIntegralNumber != null) {
             return new BigDecimal(currentIntegralNumber);
         } else if (isCurrentNumberIntegral) {
-            final Long retVal = valueLength > 0 ? parseLongFromChars(currentValue, 0, valueLength) : parseLongFromChars(buffer, start, end);
+            //if there a content in the value buffer read from them, if not use main buffer
+            final Long retVal = fallBackCopyBufferLength > 0 ? parseLongFromChars(fallBackCopyBuffer, 0, fallBackCopyBufferLength)
+                    : parseLongFromChars(buffer, startOfValueInBuffer, endOfValueInBuffer);
             if (retVal == null) {
-                return (currentBigDecimalNumber = valueLength > 0 ? new BigDecimal(currentValue, 0, valueLength) : new BigDecimal(buffer,
-                        start, (end - start)));
+                return (/*currentBigDecimalNumber = */fallBackCopyBufferLength > 0 ? new BigDecimal(fallBackCopyBuffer, 0,
+                        fallBackCopyBufferLength) : new BigDecimal(buffer, startOfValueInBuffer,
+                        (endOfValueInBuffer - startOfValueInBuffer)));
             } else {
-                return (currentBigDecimalNumber = new BigDecimal(retVal.longValue()));
+                return (/*currentBigDecimalNumber = */new BigDecimal(retVal.longValue()));
             }
         } else {
-            return (currentBigDecimalNumber = valueLength > 0 ? new BigDecimal(currentValue, 0, valueLength) : new BigDecimal(buffer,
-                    start, (end - start)));
+            //if there a content in the value buffer read from them, if not use main buffer
+            return (/*currentBigDecimalNumber = */fallBackCopyBufferLength > 0 ? new BigDecimal(fallBackCopyBuffer, 0,
+                    fallBackCopyBufferLength) : new BigDecimal(buffer, startOfValueInBuffer, (endOfValueInBuffer - startOfValueInBuffer)));
         }
 
     }
@@ -872,18 +933,14 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     @Override
     public void close() {
-
         bufferProvider.release(buffer);
-        valueProvider.release(currentValue);
+        valueProvider.release(fallBackCopyBuffer);
 
         try {
-
             in.close();
         } catch (final IOException e) {
-
-            //ignore
+            throw new JsonException("Unexpected IO exception " + e.getMessage(), e);
         }
-
     }
 
     @Override
@@ -932,18 +989,18 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
     private JsonParsingException uexc(final char c, final String message) {
         final JsonLocation location = createLocation();
         return new JsonParsingException("Unexpected character '" + c + "' (Codepoint: " + String.valueOf(c).codePointAt(0) + ") on "
-                + location + ". Reason is [" + message + "]", location);
+                + location + ". Reason is [[" + message + "]]", location);
     }
 
     private JsonParsingException uexc(final String message) {
-        final char c = pointer < 0 ? 0 : buffer[pointer];
+        final char c = bufferPos < 0 ? 0 : buffer[bufferPos];
         return uexc(c, message);
     }
 
     private JsonParsingException tmc() {
         final JsonLocation location = createLocation();
-        return new JsonParsingException("Too many characters. Maximum string length of " + maxStringSize + " exceeded on " + location,
-                location);
+        return new JsonParsingException("Too many characters. Maximum string/number length of " + maxValueLength + " exceeded on "
+                + location, location);
     }
 
     private JsonParsingException uexio(final IOException e) {
@@ -953,7 +1010,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
     private JsonParsingException cust(final String message) {
         final JsonLocation location = createLocation();
-        return new JsonParsingException("General exception on " + location + ". Reason is [" + message + "]", location);
+        return new JsonParsingException("General exception on " + location + ". Reason is [[" + message + "]]", location);
     }
 
 }

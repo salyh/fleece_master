@@ -26,22 +26,17 @@ import java.nio.charset.Charset;
 
 import javax.json.JsonException;
 
-class UTFEncodingAwareReader extends InputStreamReader {
+final class RFC4627AwareInputStreamReader extends InputStreamReader {
 
-    private final PushBackCountingInputStream cin;
-    
-    public UTFEncodingAwareReader(final InputStream in) {
-        this(new PushBackCountingInputStream(in));
+    public RFC4627AwareInputStreamReader(final InputStream in) {
+        this(new PushbackInputStream(in,4));
     }
     
-    private UTFEncodingAwareReader(final PushBackCountingInputStream in) {
-        super(in, getCharset(in));
-        cin=in;
+    private RFC4627AwareInputStreamReader(final PushbackInputStream in) {
+        super(in, getCharset(in).newDecoder());
+       
     }
-    
-    public long getReadCount() {
-        return cin.getReadCount();
-    }
+
 
     /*
         * RFC 4627
@@ -72,10 +67,31 @@ class UTFEncodingAwareReader extends InputStreamReader {
                 throw new JsonException("Invalid Json. Valid Json has at least 2 bytes");
             } else {
 
-                if (utfBytes[0] == 0x00) {
-                    charset = (utfBytes[1] == 0x00) ? Charset.forName("UTF-32BE") : Charset.forName("UTF-16BE");
-                } else if (read > 2 && utfBytes[1] == 0x00) {
-                    charset = (utfBytes[2] == 0x00) ? Charset.forName("UTF-32LE") : Charset.forName("UTF-16LE");
+                int first = (utfBytes[0] & 0xFF);
+                int second = (utfBytes[1] & 0xFF);
+                
+                if (first == 0x00) {
+                    charset = (second == 0x00) ? Charset.forName("UTF-32BE") : Charset.forName("UTF-16BE");
+                } else if (read > 2 && second == 0x00) {
+                    int third = (utfBytes[2] & 0xFF);
+                    charset = (third  == 0x00) ? Charset.forName("UTF-32LE") : Charset.forName("UTF-16LE");
+                } else {
+                  
+                    //check BOM
+                    if(first == 0xFE && second == 0xFF) {
+                        charset = Charset.forName("UTF-16BE");
+                    } else if(read > 3 && first == 0x00 && second == 0x00 && (utfBytes[2]&0xff) == 0xFE && (utfBytes[3]&0xff) == 0xFF){
+                        charset = Charset.forName("UTF-32BE");
+                    } else if(first == 0xFF && second == 0xFE) {
+                        
+                        if(read > 3 && (utfBytes[2]&0xff) == 0x00 && (utfBytes[3]&0xff) == 0x00) {
+                            charset = Charset.forName("UTF-32LE");
+                        }else {
+                            charset = Charset.forName("UTF-16LE");
+                        }
+                        
+                    }
+                    
                 }
 
             }
@@ -85,60 +101,10 @@ class UTFEncodingAwareReader extends InputStreamReader {
             
 
         } catch (final IOException e) {
-            throw new JsonException("Unable to detect charset", e);
+            throw new JsonException("Unable to detect charset due to "+e.getMessage(), e);
         }
 
         return charset;
-    }
-
-
-    private static class PushBackCountingInputStream extends PushbackInputStream{
-
-        private long readCount = 0;
-        
-        
-        public PushBackCountingInputStream(InputStream in) {
-            super(in,4);
-            
-        }
-
-
-        @Override
-        public int read() throws IOException {
-            readCount++;
-            return super.read();
-        }
-
-
-        @Override
-        public int read(byte[] b, int off, int len) throws IOException {
-            readCount+=len;
-            return super.read(b, off, len);
-        }
-
-
-        public long getReadCount() {
-            return readCount;
-        }
-
-
-        @Override
-        public void unread(int b) throws IOException {
-            readCount--;
-            super.unread(b);
-        }
-
-
-        @Override
-        public void unread(byte[] b, int off, int len) throws IOException {
-            readCount-=len;
-            super.unread(b, off, len);
-        }
-
-
-       
-        
-        
     }
 
 }
