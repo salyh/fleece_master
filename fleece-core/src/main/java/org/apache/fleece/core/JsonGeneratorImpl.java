@@ -62,11 +62,14 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     }
    
 
-    protected void addCommaIfNeeded() {
+    protected boolean addCommaIfNeeded() {
         if (needComma) {
             justWrite(COMMA_CHAR);
             needComma = false;
+            return true;
         }
+        
+        return false;
     }
 
     // we cache key only since they are generally fixed
@@ -86,11 +89,11 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     public JsonGenerator writeStartObject() {
         
         if(currentStructureElement == null && valid) {
-            throw new JsonGenerationException("unexpected character");
+            throw new JsonGenerationException("Method must not be called more than once in no context");
         }  
         
         if(currentStructureElement != null && !currentStructureElement.isArray) {
-            throw new JsonGenerationException("unexpected character");
+            throw new JsonGenerationException("Method must not be called within an object context");
         }       
         
       //push upon the stack
@@ -101,20 +104,21 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
             currentStructureElement = localStructureElement;
         }
 
-        depth++;
+       
         
         if(!valid){
             valid=true;
         }
         
         noCheckWrite(START_OBJECT_CHAR);
+        depth++;
         return this;
     }
 
     @Override
     public JsonGenerator writeStartObject(final String name) {
         if(currentStructureElement == null || currentStructureElement.isArray) {
-            throw new JsonGenerationException("unexpected character");
+            throw new JsonGenerationException("Method must not be called within an array context");
         }  
         
       //push upon the stack
@@ -125,20 +129,21 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
             currentStructureElement = localStructureElement;
         }
         
-        depth++;
+       
         
        noCheckWrite(key(name) + START_OBJECT_CHAR);
+       depth++;
        return this;
     }
 
     @Override
     public JsonGenerator writeStartArray() {
         if(currentStructureElement == null && valid) {
-            throw new JsonGenerationException("unexpected character");
+            throw new JsonGenerationException("Method must not be called more than once in no context");
         }  
         
         if(currentStructureElement != null && !currentStructureElement.isArray) {
-            throw new JsonGenerationException("unexpected character");
+            throw new JsonGenerationException("Method must not be called within an object context");
         }    
         
       //push upon the stack
@@ -149,21 +154,21 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
             currentStructureElement = localStructureElement;
         }
         
-        depth++;
+       
         
         if(!valid){
             valid=true;
         }
         
         noCheckWrite(START_ARRAY_CHAR);
-        
+        depth++;
         return this;
     }
 
     @Override
     public JsonGenerator writeStartArray(final String name) {
         if(currentStructureElement == null || currentStructureElement.isArray) {
-            throw new JsonGenerationException("unexpected character");
+            throw new JsonGenerationException("Method must not be called within an array context");
         }  
         
       //push upon the stack
@@ -174,9 +179,10 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
             currentStructureElement = localStructureElement;
         }
         
-        depth++;
+        
         
         noCheckWrite(key(name) + START_ARRAY_CHAR);
+        depth++;
         return this;
     }
 
@@ -221,8 +227,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     @Override
     public JsonGenerator write(final String name, final long value) {
         checkObject();
-        noCheckWriteAndForceComma(key(name));
-        justWrite(String.valueOf(value));
+        noCheckWriteAndForceComma(key(name)+String.valueOf(value));
         return this;
     }
 
@@ -250,8 +255,12 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator writeEnd() {       
-        needComma = false;
-        noCheckWriteAndForceComma(currentStructureElement.isArray ? END_ARRAY_CHAR : END_OBJECT_CHAR);
+        if(currentStructureElement==null){
+            throw new JsonGenerationException("Method must not be called in no context");
+        }  
+        
+        //needComma = false;
+        writeEnd(currentStructureElement.isArray ? END_ARRAY_CHAR : END_OBJECT_CHAR);
         
         //pop from stack
         currentStructureElement = currentStructureElement.previous;
@@ -265,8 +274,6 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         if(JsonStructure.class.isInstance(value)) {
             valid = true;
         }
-        
-        
         noCheckWriteAndForceComma(String.valueOf(value));
         return this;
     }
@@ -364,18 +371,24 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         return this;
     }
     
+    protected JsonGenerator writeEnd(final char value) {
+        justWrite(value);
+        needComma = true;
+        return this;
+    }
+    
     protected JsonGenerator noCheckWriteAndForceComma(final char value) {
         noCheckWrite(value);
         needComma = true;
         return this;
     }
 
-    private void noCheckWrite(String value) {
+    protected void noCheckWrite(String value) {
         addCommaIfNeeded();
         justWrite(value);
     }
     
-    private void noCheckWrite(char value) {
+    protected void noCheckWrite(char value) {
         addCommaIfNeeded();
         justWrite(value);
     }
