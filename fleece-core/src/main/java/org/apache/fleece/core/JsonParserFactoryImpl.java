@@ -18,31 +18,50 @@
  */
 package org.apache.fleece.core;
 
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.stream.JsonParser;
-import javax.json.stream.JsonParserFactory;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.stream.JsonParser;
+import javax.json.stream.JsonParserFactory;
+
+class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
     public static final String BUFFER_STRATEGY = "org.apache.fleece.buffer-strategy";
     public static final String MAX_STRING_LENGTH = "org.apache.fleece.max-string-length";
     public static final String BUFFER_LENGTH = "org.apache.fleece.default-char-buffer";
     public static final int DEFAULT_MAX_SIZE = Integer.getInteger(MAX_STRING_LENGTH, 8192*32);
 
-    private final Map<String, ?> config;
+    private final Map<String, Object> internalConfig = new HashMap<String, Object>();
+    private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
+        
+        BUFFER_STRATEGY, MAX_STRING_LENGTH, BUFFER_LENGTH
+        
+    };
+    
+    
     private final int maxSize;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
     private final BufferStrategy.BufferProvider<char[]> valueBufferProvider;
 
-    public JsonParserFactoryImpl(final Map<String, ?> config) {
-        this.config = config;
+    JsonParserFactoryImpl(final Map<String, ?> config) {
+        
+
+        if(config != null) {
+            
+            for (String configKey : SUPPORTED_CONFIG_KEYS) {
+                if(config.containsKey(configKey)) {
+                    internalConfig.put(configKey, config.get(configKey));
+                }
+            }
+        } 
+        
 
         final int bufferSize = getInt(BUFFER_LENGTH);
         if (bufferSize <= 0) {
@@ -55,10 +74,7 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
     }
 
     private BufferStrategy getBufferProvider() {
-        if(config==null) {
-            return BufferStrategy.QUEUE;
-        }
-        final Object name = config.get(BUFFER_STRATEGY);
+        final Object name = internalConfig.get(BUFFER_STRATEGY);
         if (name != null) {
             return BufferStrategy.valueOf(name.toString().toUpperCase(Locale.ENGLISH));
         }
@@ -66,10 +82,7 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
     }
 
     private int getInt(final String key) {
-        if(config==null) {
-            return DEFAULT_MAX_SIZE;
-        }
-        final Object maxStringSize = config.get(key);
+        final Object maxStringSize = internalConfig.get(key);
         if (maxStringSize == null) {
             return DEFAULT_MAX_SIZE;
         } else if (Number.class.isInstance(maxStringSize)) {
@@ -120,7 +133,7 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
 
     @Override
     public Map<String, ?> getConfigInUse() {
-        return Collections.unmodifiableMap(config);
+        return Collections.unmodifiableMap(internalConfig);
     }
 
     public EscapedStringAwareJsonParser createInternalParser(final InputStream in) {

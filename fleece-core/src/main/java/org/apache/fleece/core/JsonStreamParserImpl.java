@@ -426,7 +426,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
         final char c = readNextNonWhitespaceChar();
 
-        if (c == COMMA) {
+        if (c == COMMA_CHAR) {
 
             //last event must one of the following-> " ] } LITERAL
             if (previousEvent == START_ARRAY || previousEvent == START_OBJECT || previousEvent == COMMA_EVENT || previousEvent == KEY_NAME) {
@@ -483,7 +483,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
                 return handleEndArray();
 
-            case QUOTE:
+            case QUOTE_CHAR:
 
                 return handleQuote();
 
@@ -593,7 +593,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
         //when first called n its first char after the starting quote
         //after that its the next character after the while loop below
 
-        if (n == QUOTE) {
+        if (n == QUOTE_CHAR) {
             endOfValueInBuffer = startOfValueInBuffer = bufferPos; //->"" case
             return;
         } else if (n == EOL) {
@@ -626,13 +626,13 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
             startOfValueInBuffer = bufferPos;
             endOfValueInBuffer = -1;
 
-            while ((n = readNextChar()) > '\u001F' && n != ESCAPE_CHAR && n != EOL && n != QUOTE) {
+            while ((n = readNextChar()) > '\u001F' && n != ESCAPE_CHAR && n != EOL && n != QUOTE_CHAR) {
                 //read fast
             }
 
             endOfValueInBuffer = bufferPos;
 
-            if (n == QUOTE) {
+            if (n == QUOTE_CHAR) {
 
                 if (fallBackCopyBufferLength > 0) {
                     copyCurrentValue();
@@ -807,7 +807,7 @@ public class JsonStreamParserImpl implements JsonChars, EscapedStringAwareJsonPa
 
         endOfValueInBuffer = bufferPos;
 
-        if (y == COMMA || y == END_ARRAY_CHAR || y == END_OBJECT_CHAR || y == EOL || y == SPACE || y == TAB || y == CR) {
+        if (y == COMMA_CHAR || y == END_ARRAY_CHAR || y == END_OBJECT_CHAR || y == EOL || y == SPACE || y == TAB || y == CR) {
 
             bufferPos--;//unread one char
 

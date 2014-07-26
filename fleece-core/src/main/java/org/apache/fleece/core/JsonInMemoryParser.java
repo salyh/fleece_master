@@ -18,31 +18,32 @@
  */
 package org.apache.fleece.core;
 
-import javax.json.JsonArray;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-import javax.json.stream.JsonLocation;
 import java.math.BigDecimal;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import javax.json.JsonArray;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+import javax.json.stream.JsonLocation;
+
 // we don't use visitor pattern to ensure we work with other impl of JsonObject and JsonArray
-public class JsonInMemoryParser implements EscapedStringAwareJsonParser {
+class JsonInMemoryParser implements EscapedStringAwareJsonParser {
     private final Iterator<Entry> iterator;
 
     private Entry next = null;
 
-    public JsonInMemoryParser(final JsonObject object) {
+    JsonInMemoryParser(final JsonObject object) {
         final List<Entry> events = new LinkedList<Entry>();
         generateObjectEvents(events, object);
         iterator = events.iterator();
     }
 
-    public JsonInMemoryParser(final JsonArray array) {
+    JsonInMemoryParser(final JsonArray array) {
         final List<Entry> events = new LinkedList<Entry>();
         generateArrayEvents(events, array);
         iterator = events.iterator();
@@ -102,7 +103,7 @@ public class JsonInMemoryParser implements EscapedStringAwareJsonParser {
         if (JsonObject.class.isInstance(next.value) || JsonArray.class.isInstance(next.value)) {
             throw new IllegalStateException("String is for numbers and strings");
         }
-        return getEscapedString();
+        return JsonString.class.cast(next.value).getString();
     }
 
     @Override
@@ -139,12 +140,12 @@ public class JsonInMemoryParser implements EscapedStringAwareJsonParser {
 
     @Override
     public JsonLocation getLocation() { // no location for in memory parsers
-        return new JsonLocationImpl(-1, -1, -1);
+        return JsonLocationImpl.UNKNOW_LOCATION;
     }
 
     @Override
     public String getEscapedString() {
-        return JsonValue.class.cast(next.value).toString();
+        return JsonString.class.cast(next.value).toString();
     }
 
     @Override

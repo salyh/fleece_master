@@ -252,7 +252,7 @@ public class CopyOfJsonStreamParserImplOneBuffer implements JsonChars, EscapedSt
 
         final char c = readNextNonWhitespaceChar();
 
-        if (c == COMMA) {
+        if (c == COMMA_CHAR) {
 
             //last event must one of the following-> " ] } LITERAL
             if (event == START_ARRAY || event == START_OBJECT || event == COMMA_EVENT || event == KEY_NAME) {
@@ -296,7 +296,7 @@ public class CopyOfJsonStreamParserImplOneBuffer implements JsonChars, EscapedSt
 
                 return handleEndArray();
 
-            case QUOTE:
+            case QUOTE_CHAR:
 
                 return handleQuote();
 
@@ -393,7 +393,7 @@ public class CopyOfJsonStreamParserImplOneBuffer implements JsonChars, EscapedSt
 
         char n = read(); //first char after the starting quote
 
-        if (n == QUOTE) {
+        if (n == QUOTE_CHAR) {
             return;
         }
 
@@ -421,7 +421,7 @@ public class CopyOfJsonStreamParserImplOneBuffer implements JsonChars, EscapedSt
 
                 n = read();
 
-            } else if (n == QUOTE) {
+            } else if (n == QUOTE_CHAR) {
 
                 if (valueLength > maxStringSize) {
                     throw tmc();
@@ -439,7 +439,7 @@ public class CopyOfJsonStreamParserImplOneBuffer implements JsonChars, EscapedSt
                 //char highSurrogate0 = 0;
                 start = pointer;
 
-                while ((n = read()) > '\u001F' && n != ESCAPE_CHAR && n != EOL && n != QUOTE) {
+                while ((n = read()) > '\u001F' && n != ESCAPE_CHAR && n != EOL && n != QUOTE_CHAR) {
                     //read fast
                     //highSurrogate0 = checkSurrogates(n, highSurrogate0);
 
@@ -597,7 +597,7 @@ public class CopyOfJsonStreamParserImplOneBuffer implements JsonChars, EscapedSt
 
         }
 
-        if (y == COMMA || y == END_ARRAY_CHAR || y == END_OBJECT_CHAR || y == EOL) {
+        if (y == COMMA_CHAR || y == END_ARRAY_CHAR || y == END_OBJECT_CHAR || y == EOL) {
 
             unread();
 

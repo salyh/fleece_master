@@ -272,7 +272,7 @@ public class RightDirectionJsonStreamParserImpl implements JsonChars, EscapedStr
 
         final char c = readNextNonWhitespaceChar();
 
-        if (c == COMMA) {
+        if (c == COMMA_CHAR) {
 
             //last event must one of the following-> " ] } LITERAL
             if (event == START_ARRAY || event == START_OBJECT || event == COMMA_EVENT || event == KEY_NAME) {
@@ -302,7 +302,7 @@ public class RightDirectionJsonStreamParserImpl implements JsonChars, EscapedStr
 
                 return handleEndArray();
 
-            case QUOTE:
+            case QUOTE_CHAR:
 
                 if (isCurrentNumberIntegral) {
                     isCurrentNumberIntegral = false;
@@ -425,7 +425,7 @@ public class RightDirectionJsonStreamParserImpl implements JsonChars, EscapedStr
         
         char n = read(); //first char after the starting quote
         
-        if(n==QUOTE) {
+        if(n==QUOTE_CHAR) {
             return;
         }
 
@@ -451,7 +451,7 @@ public class RightDirectionJsonStreamParserImpl implements JsonChars, EscapedStr
                 
                 n=read();
 
-            } else if (n == QUOTE) {
+            } else if (n == QUOTE_CHAR) {
                 return;
             } else if (n == EOL) {
                 throw uexc("Unexpected linebreak");
@@ -463,7 +463,7 @@ public class RightDirectionJsonStreamParserImpl implements JsonChars, EscapedStr
 
                 start = pointer;
 
-                while ((n = read()) > '\u001F' && n != ESCAPE_CHAR && n != EOL && n != QUOTE) {
+                while ((n = read()) > '\u001F' && n != ESCAPE_CHAR && n != EOL && n != QUOTE_CHAR) {
                     //read fast
 
                 }
@@ -602,7 +602,7 @@ public class RightDirectionJsonStreamParserImpl implements JsonChars, EscapedStr
 
         markCurrentChar();
 
-        if (y == COMMA || y == END_ARRAY_CHAR || y == END_OBJECT_CHAR || y == EOL) {
+        if (y == COMMA_CHAR || y == END_ARRAY_CHAR || y == END_OBJECT_CHAR || y == EOL) {
             //end of number
             resetToLastMark();
 

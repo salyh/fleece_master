@@ -18,44 +18,64 @@
  */
 package org.apache.fleece.core;
 
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonGeneratorFactory;
-
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonGeneratorFactory;
+
 public class JsonGeneratorFactoryImpl implements JsonGeneratorFactory, Serializable {
-    private final Map<String, ?> config;
+    private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
+    private final Map<String, Object> internalConfig = new HashMap<String, Object>();
+    private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
+        
+        JsonGenerator.PRETTY_PRINTING
+        
+    };
     private final ConcurrentMap<String, String> cache = new ConcurrentHashMap<String, String>();
     private final boolean pretty;
 
     public JsonGeneratorFactoryImpl(final Map<String, ?> config) {
-        this.config = config;
-        this.pretty = Boolean.TRUE.equals(config.get(JsonGenerator.PRETTY_PRINTING)) || "true".equals(config.get(JsonGenerator.PRETTY_PRINTING));
+        
+          if(config != null) {
+          
+              for (String configKey : SUPPORTED_CONFIG_KEYS) {
+                  if(config.containsKey(configKey)) {
+                      internalConfig.put(configKey, config.get(configKey));
+                  }
+              }
+          } 
+
+          if(internalConfig.containsKey(JsonGenerator.PRETTY_PRINTING)) {
+              this.pretty = Boolean.TRUE.equals(internalConfig.get(JsonGenerator.PRETTY_PRINTING)) || "true".equals(internalConfig.get(JsonGenerator.PRETTY_PRINTING));
+          } else {
+              this.pretty = false;
+          }
     }
 
     @Override
     public JsonGenerator createGenerator(final Writer writer) {
-        return new JsonGeneratorFacade(newJsonGeneratorImpl(writer));
+        return newJsonGeneratorImpl(writer);
     }
 
     private JsonGenerator newJsonGeneratorImpl(final Writer writer) {
         if (pretty) {
             return new JsonPrettyGeneratorImpl(writer, cache);
         }
-        return new JsonGeneratorImpl<JsonGeneratorImpl<?>>(writer, cache);
+        return new JsonGeneratorImpl(writer, cache);
     }
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out) {
-        return createGenerator(new OutputStreamWriter(out));
+        return createGenerator(new OutputStreamWriter(out, UTF8_CHARSET));
     }
 
     @Override
@@ -65,6 +85,6 @@ public class JsonGeneratorFactoryImpl implements JsonGeneratorFactory, Serializa
 
     @Override
     public Map<String, ?> getConfigInUse() {
-        return Collections.unmodifiableMap(config);
+        return Collections.unmodifiableMap(internalConfig);
     }
 }

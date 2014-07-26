@@ -308,7 +308,7 @@ public class StartEndGeht1JsonStreamParserImpl implements JsonChars, EscapedStri
 
         final char c = readNextNonWhitespaceChar();
 
-        if (c == COMMA) {
+        if (c == COMMA_CHAR) {
 
             //last event must one of the following-> " ] } LITERAL
             if (event == START_ARRAY || event == START_OBJECT || event == COMMA_EVENT || event == KEY_NAME) {
@@ -352,7 +352,7 @@ public class StartEndGeht1JsonStreamParserImpl implements JsonChars, EscapedStri
 
                 return handleEndArray();
 
-            case QUOTE:
+            case QUOTE_CHAR:
 
                 return handleQuote();
 
@@ -444,7 +444,7 @@ public class StartEndGeht1JsonStreamParserImpl implements JsonChars, EscapedStri
 
         char n = read(); //first char after the starting quote
 
-        if (n == QUOTE) {
+        if (n == QUOTE_CHAR) {
             return;
         }
 
@@ -472,7 +472,7 @@ public class StartEndGeht1JsonStreamParserImpl implements JsonChars, EscapedStri
 
                 n = read();
 
-            } else if (n == QUOTE) {
+            } else if (n == QUOTE_CHAR) {
 
                 if (valueLength > maxStringSize) {
                     throw tmc();
@@ -490,7 +490,7 @@ public class StartEndGeht1JsonStreamParserImpl implements JsonChars, EscapedStri
                 //char highSurrogate0 = 0;
                 start = pointer;
 
-                while ((n = read()) > '\u001F' && n != ESCAPE_CHAR && n != EOL && n != QUOTE) {
+                while ((n = read()) > '\u001F' && n != ESCAPE_CHAR && n != EOL && n != QUOTE_CHAR) {
                     //read fast
                     //highSurrogate0 = checkSurrogates(n, highSurrogate0);
 
@@ -723,7 +723,7 @@ public class StartEndGeht1JsonStreamParserImpl implements JsonChars, EscapedStri
 
         }
 
-        if (y == COMMA || y == END_ARRAY_CHAR || y == END_OBJECT_CHAR || y == EOL) {
+        if (y == COMMA_CHAR || y == END_ARRAY_CHAR || y == END_OBJECT_CHAR || y == EOL) {
 
             unread();
 

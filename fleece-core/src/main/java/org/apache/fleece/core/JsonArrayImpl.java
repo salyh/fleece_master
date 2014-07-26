@@ -18,18 +18,19 @@
  */
 package org.apache.fleece.core;
 
-import javax.json.JsonArray;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonString;
-import javax.json.JsonValue;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-public class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray, Serializable {
+import javax.json.JsonArray;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+
+class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray, Serializable {
     private Integer hashCode = null;
 
     private <T> T value(final int idx, final Class<T> type) {
@@ -124,7 +125,7 @@ public class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray, S
         while (hasNext) {
             final JsonValue jsonValue = it.next();
             if (JsonString.class.isInstance(jsonValue)) {
-                builder.append(JsonChars.QUOTE).append(jsonValue.toString()).append(JsonChars.QUOTE);
+                builder.append(jsonValue.toString());
             } else {
                 builder.append(jsonValue != JsonValue.NULL ? jsonValue.toString() : JsonChars.NULL);
             }
@@ -198,9 +199,11 @@ public class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray, S
 
     @Override
     public int hashCode() {
-        if (hashCode == null) {
-            hashCode = super.hashCode();
+        Integer h=hashCode;
+        if (h == null) {
+            h = super.hashCode();
+            h=hashCode;
         }
-        return hashCode;
+        return h;
     }
 }

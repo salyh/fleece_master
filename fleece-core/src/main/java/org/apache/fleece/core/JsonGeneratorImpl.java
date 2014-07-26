@@ -18,10 +18,6 @@
  */
 package org.apache.fleece.core;
 
-import javax.json.JsonString;
-import javax.json.JsonValue;
-import javax.json.stream.JsonGenerationException;
-import javax.json.stream.JsonGenerator;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.Writer;
@@ -29,46 +25,48 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.concurrent.ConcurrentMap;
 
-public class JsonGeneratorImpl<P extends JsonGeneratorImpl<?>> implements JsonGenerator, JsonChars, Serializable {
-    protected static final String START_ARRAY = "[";
-    protected static final String END_ARRAY = "]";
-    protected static final String END_OBJECT = "}";
-    protected static final String START_OBJECT = "{";
-    protected static final String NULL = "null";
-    protected static final String NULL_KEY = "null:";
+import javax.json.JsonException;
+import javax.json.JsonStructure;
+import javax.json.JsonValue;
+import javax.json.stream.JsonGenerationException;
+import javax.json.stream.JsonGenerator;
+
+class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
+    private static final String NULL_KEY = NULL+KEY_SEPARATOR;
 
     protected final Writer writer;
-    protected final P parent;
-    protected final boolean array;
-    protected final ConcurrentMap<String, String> cache;
+    private final ConcurrentMap<String, String> cache;
+    boolean needComma = false;
+    
+    private StructureElement currentStructureElement = null;
+    protected boolean valid = false;
+    protected int depth = 0;
 
-    protected boolean needComma = false;
+    //minimal stack implementation
+    private static final class StructureElement {
+        final StructureElement previous;
+        final boolean isArray;
+        
 
-    public JsonGeneratorImpl(final Writer writer, final ConcurrentMap<String, String> cache) {
-        this(writer, null, false, cache);
+        StructureElement(final StructureElement previous, final boolean isArray) {
+            super();
+            this.previous = previous;
+            this.isArray = isArray;
+        }             
     }
 
-    public JsonGeneratorImpl(final Writer writer, final P parent, final boolean array,
-                             final ConcurrentMap<String, String> cache) {
+
+   JsonGeneratorImpl(final Writer writer, final ConcurrentMap<String, String> cache) {
         this.writer = writer;
-        this.parent = parent;
-        this.array = array;
         this.cache = cache;
     }
+   
 
-    private void addCommaIfNeeded() {
+    protected void addCommaIfNeeded() {
         if (needComma) {
-            try {
-                writer.write(',');
-            } catch (final IOException e) {
-                throw new JsonGenerationException(e.getMessage(), e);
-            }
+            justWrite(COMMA_CHAR);
             needComma = false;
         }
-    }
-
-    protected JsonGenerator newJsonGenerator(final Writer writer, final P parent, final boolean array) {
-        return new JsonGeneratorImpl<P>(writer, parent, array, cache);
     }
 
     // we cache key only since they are generally fixed
@@ -86,68 +84,137 @@ public class JsonGeneratorImpl<P extends JsonGeneratorImpl<?>> implements JsonGe
 
     @Override
     public JsonGenerator writeStartObject() {
-        noCheckWriteAndForceComma(START_OBJECT);
-        return newJsonGenerator(writer, (P) this, false);
+        
+        if(currentStructureElement == null && valid) {
+            throw new JsonGenerationException("unexpected character");
+        }  
+        
+        if(currentStructureElement != null && !currentStructureElement.isArray) {
+            throw new JsonGenerationException("unexpected character");
+        }       
+        
+      //push upon the stack
+        if (currentStructureElement == null) {
+            currentStructureElement = new StructureElement(null, false);
+        } else {
+            final StructureElement localStructureElement = new StructureElement(currentStructureElement, false);
+            currentStructureElement = localStructureElement;
+        }
+
+        depth++;
+        
+        if(!valid){
+            valid=true;
+        }
+        
+        noCheckWrite(START_OBJECT_CHAR);
+        return this;
     }
 
     @Override
     public JsonGenerator writeStartObject(final String name) {
-        noCheckWriteAndForceComma(key(name) + START_OBJECT);
-        return newJsonGenerator(writer, (P) this, false);
+        if(currentStructureElement == null || currentStructureElement.isArray) {
+            throw new JsonGenerationException("unexpected character");
+        }  
+        
+      //push upon the stack
+        if (currentStructureElement == null) {
+            currentStructureElement = new StructureElement(null, false);
+        } else {
+            final StructureElement localStructureElement = new StructureElement(currentStructureElement, false);
+            currentStructureElement = localStructureElement;
+        }
+        
+        depth++;
+        
+       noCheckWrite(key(name) + START_OBJECT_CHAR);
+       return this;
     }
 
     @Override
     public JsonGenerator writeStartArray() {
-        noCheckWriteAndForceComma(START_ARRAY);
-        return newJsonGenerator(writer, (P) this, true);
+        if(currentStructureElement == null && valid) {
+            throw new JsonGenerationException("unexpected character");
+        }  
+        
+        if(currentStructureElement != null && !currentStructureElement.isArray) {
+            throw new JsonGenerationException("unexpected character");
+        }    
+        
+      //push upon the stack
+        if (currentStructureElement == null) {
+            currentStructureElement = new StructureElement(null, true);
+        } else {
+            final StructureElement localStructureElement = new StructureElement(currentStructureElement, true);
+            currentStructureElement = localStructureElement;
+        }
+        
+        depth++;
+        
+        if(!valid){
+            valid=true;
+        }
+        
+        noCheckWrite(START_ARRAY_CHAR);
+        
+        return this;
     }
 
     @Override
     public JsonGenerator writeStartArray(final String name) {
-        noCheckWriteAndForceComma(key(name) + START_ARRAY);
-        return newJsonGenerator(writer, (P) this, true);
+        if(currentStructureElement == null || currentStructureElement.isArray) {
+            throw new JsonGenerationException("unexpected character");
+        }  
+        
+      //push upon the stack
+        if (currentStructureElement == null) {
+            currentStructureElement = new StructureElement(null, true);
+        } else {
+            final StructureElement localStructureElement = new StructureElement(currentStructureElement, true);
+            currentStructureElement = localStructureElement;
+        }
+        
+        depth++;
+        
+        noCheckWrite(key(name) + START_ARRAY_CHAR);
+        return this;
     }
 
     @Override
     public JsonGenerator write(final String name, final JsonValue value) {
-        if (JsonString.class.isInstance(value)) {
-            return write(name, value == null ? null : value.toString());
-        }
+        //if (JsonString.class.isInstance(value)) {
+          //  return write(name, value == null ? null : value.toString());
+        //}
         checkObject();
-        noCheckWriteAndForceComma(key(name));
-        justWrite(value == null ? NULL : value.toString());
+        noCheckWriteAndForceComma(key(name)+String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator write(final String name, final String value) {
-        checkObject();
-        noCheckWriteAndForceComma(key(name));
-        justWrite(value == null ? NULL : "\"" + Strings.escape(value) + "\"");
+        checkObject();        
+        noCheckWriteAndForceComma(key(name)+QUOTE_CHAR+Strings.escape(value)+QUOTE_CHAR);
         return this;
     }
 
     @Override
     public JsonGenerator write(final String name, final BigInteger value) {
         checkObject();
-        noCheckWriteAndForceComma(key(name));
-        justWrite(value == null ? NULL : value.toString());
+        noCheckWriteAndForceComma(key(name)+String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator write(final String name, final BigDecimal value) {
         checkObject();
-        noCheckWriteAndForceComma(key(name));
-        justWrite(value == null ? NULL : value.toString());
+        noCheckWriteAndForceComma(key(name)+String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator write(final String name, final int value) {
         checkObject();
-        noCheckWriteAndForceComma(key(name));
-        justWrite(String.valueOf(value));
+        noCheckWriteAndForceComma(key(name)+String.valueOf(value));
         return this;
     }
 
@@ -163,36 +230,43 @@ public class JsonGeneratorImpl<P extends JsonGeneratorImpl<?>> implements JsonGe
     public JsonGenerator write(final String name, final double value) {
         checkObject();
         checkDoubleRange(value);
-        noCheckWriteAndForceComma(key(name));
-        justWrite(String.valueOf(value));
+        noCheckWriteAndForceComma(key(name)+String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator write(final String name, final boolean value) {
         checkObject();
-        noCheckWriteAndForceComma(key(name));
-        justWrite(String.valueOf(value));
+        noCheckWriteAndForceComma(key(name)+String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator writeNull(final String name) {
         checkObject();
-        noCheckWriteAndForceComma(key(name));
-        justWrite(NULL);
+        noCheckWriteAndForceComma(key(name)+NULL);
         return this;
     }
 
     @Override
-    public JsonGenerator writeEnd() {
+    public JsonGenerator writeEnd() {       
         needComma = false;
-        noCheckWriteAndForceComma(array ? END_ARRAY : END_OBJECT);
-        return parent != null ? parent : this;
+        noCheckWriteAndForceComma(currentStructureElement.isArray ? END_ARRAY_CHAR : END_OBJECT_CHAR);
+        
+        //pop from stack
+        currentStructureElement = currentStructureElement.previous;
+        depth--;
+        
+        return this;
     }
 
     @Override
     public JsonGenerator write(final JsonValue value) {
+        if(JsonStructure.class.isInstance(value)) {
+            valid = true;
+        }
+        
+        
         noCheckWriteAndForceComma(String.valueOf(value));
         return this;
     }
@@ -200,7 +274,7 @@ public class JsonGeneratorImpl<P extends JsonGeneratorImpl<?>> implements JsonGe
     @Override
     public JsonGenerator write(final String value) {
         checkArray();
-        noCheckWriteAndForceComma(QUOTE+Strings.escape(value)+QUOTE);
+        noCheckWriteAndForceComma(QUOTE_CHAR+Strings.escape(value)+QUOTE_CHAR);
         return this;
     }
 
@@ -263,10 +337,15 @@ public class JsonGeneratorImpl<P extends JsonGeneratorImpl<?>> implements JsonGe
 
     @Override
     public void close() {
+        
+        if(currentStructureElement != null || !valid) {
+            throw new JsonGenerationException("Invalid json "+currentStructureElement+" "+valid);
+        }
+        
         try {
             writer.close();
         } catch (final IOException e) {
-            throw new JsonGenerationException(e.getMessage(), e);
+            throw new JsonException(e.getMessage(), e);
         }
     }
 
@@ -275,11 +354,17 @@ public class JsonGeneratorImpl<P extends JsonGeneratorImpl<?>> implements JsonGe
         try {
             writer.flush();
         } catch (final IOException e) {
-            throw new JsonGenerationException(e.getMessage(), e);
+            throw new JsonException(e.getMessage(), e);
         }
     }
 
     protected JsonGenerator noCheckWriteAndForceComma(final String value) {
+        noCheckWrite(value);
+        needComma = true;
+        return this;
+    }
+    
+    protected JsonGenerator noCheckWriteAndForceComma(final char value) {
         noCheckWrite(value);
         needComma = true;
         return this;
@@ -289,30 +374,43 @@ public class JsonGeneratorImpl<P extends JsonGeneratorImpl<?>> implements JsonGe
         addCommaIfNeeded();
         justWrite(value);
     }
+    
+    private void noCheckWrite(char value) {
+        addCommaIfNeeded();
+        justWrite(value);
+    }
 
-    private void justWrite(final String value) {
+    protected void justWrite(final String value) {
         try {
             writer.write(value);
         } catch (final IOException e) {
-            throw new JsonGenerationException(e.getMessage(), e);
+            throw new JsonException(e.getMessage(), e);
+        }
+    }
+    
+    protected void justWrite(final char value) {
+        try {
+            writer.write(value);
+        } catch (final IOException e) {
+            throw new JsonException(e.getMessage(), e);
         }
     }
 
     private void checkObject() {
-        if (array) {
+        if (currentStructureElement == null || currentStructureElement.isArray) {
             throw new JsonGenerationException("write(name, param) is only valid in objects");
         }
     }
 
     private void checkArray() {
-        if (!array) {
+        if (currentStructureElement == null || !currentStructureElement.isArray) {
             throw new JsonGenerationException("write(param) is only valid in arrays");
         }
     }
 
     private static void checkDoubleRange(final double value) {
         if (Double.isInfinite(value) || Double.isNaN(value)) {
-            throw new NumberFormatException("double can't be infinite and NaN");
+            throw new NumberFormatException("double can't be infinite or NaN");
         }
     }
 }

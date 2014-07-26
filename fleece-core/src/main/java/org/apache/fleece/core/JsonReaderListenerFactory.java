@@ -18,7 +18,7 @@
  */
 package org.apache.fleece.core;
 
-public interface JsonReaderListenerFactory {
+interface JsonReaderListenerFactory {
     JsonReaderListener subObject();
 
     JsonReaderListener subArray();

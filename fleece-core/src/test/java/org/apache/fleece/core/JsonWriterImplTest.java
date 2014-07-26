@@ -36,6 +36,7 @@ public class JsonWriterImplTest {
         value.putInternal("a", new JsonStringImpl("b"));
         writer.write(value);
         writer.close();
+        System.out.println(new String(out.toByteArray()));
         assertEquals("{\"a\":\"b\"}", new String(out.toByteArray()));
     }
 }

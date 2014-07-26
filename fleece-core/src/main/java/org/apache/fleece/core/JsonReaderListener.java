@@ -20,7 +20,7 @@ package org.apache.fleece.core;
 
 import java.math.BigDecimal;
 
-public interface JsonReaderListener {
+interface JsonReaderListener {
     Object getObject();
 
     void onKey(String string);

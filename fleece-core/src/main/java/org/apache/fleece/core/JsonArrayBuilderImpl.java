@@ -18,15 +18,16 @@
  */
 package org.apache.fleece.core;
 
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonValue;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObjectBuilder;
+import javax.json.JsonValue;
+
+class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
     private final JsonArrayImpl array = new JsonArrayImpl();
 
     @Override

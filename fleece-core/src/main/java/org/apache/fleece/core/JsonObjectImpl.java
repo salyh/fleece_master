@@ -18,17 +18,18 @@
  */
 package org.apache.fleece.core;
 
-import javax.json.JsonArray;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonString;
-import javax.json.JsonValue;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class JsonObjectImpl extends LinkedHashMap<String, JsonValue> implements JsonObject, Serializable {
+import javax.json.JsonArray;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+
+final class JsonObjectImpl extends LinkedHashMap<String, JsonValue> implements JsonObject, Serializable {
     private Integer hashCode = null;
 
     private <T> T value(final String name, final Class<T> clazz) {
@@ -124,7 +125,7 @@ public class JsonObjectImpl extends LinkedHashMap<String, JsonValue> implements 
 
             final JsonValue value = entry.getValue();
             if (JsonString.class.isInstance(value)) {
-                builder.append(JsonChars.QUOTE).append(value.toString()).append(JsonChars.QUOTE);
+                builder.append(value.toString());
             } else {
                 builder.append(value != JsonValue.NULL ? value.toString() : JsonChars.NULL);
             }
@@ -166,7 +167,11 @@ public class JsonObjectImpl extends LinkedHashMap<String, JsonValue> implements 
         throw new UnsupportedOperationException("JsonObject is immutable. You can create another one thanks to JsonObjectBuilder");
     }
 
-    public void putInternal(final String name, final JsonValue value) {
+    void putInternal(final String name, final JsonValue value) {
+        if(name == null || value == null) {
+            throw new NullPointerException("name and value must not be null");
+        }
+        
         super.put(name, value);
     }
 

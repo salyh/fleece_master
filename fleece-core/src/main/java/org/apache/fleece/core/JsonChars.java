@@ -27,8 +27,8 @@ public interface JsonChars {
     char END_OBJECT_CHAR = '}';
     char START_ARRAY_CHAR = '[';
     char END_ARRAY_CHAR = ']';
-    char QUOTE = '"';
-    char COMMA = ',';
+    char QUOTE_CHAR = '"';
+    char COMMA_CHAR = ',';
     char KEY_SEPARATOR = ':';
     
     char EOL = '\n';

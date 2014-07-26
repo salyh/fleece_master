@@ -18,108 +18,248 @@
  */
 package org.apache.fleece.core;
 
-import javax.json.stream.JsonGenerationException;
-import javax.json.stream.JsonGenerator;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.concurrent.ConcurrentMap;
 
-public class JsonPrettyGeneratorImpl extends JsonGeneratorImpl<JsonPrettyGeneratorImpl> {
+class JsonPrettyGeneratorImpl extends JsonGeneratorImpl {
     private static final String DEFAULT_INDENTATION = "  ";
+    private final String indent; 
 
-    private String indent; // should be final but writeEnd needs it not final, we could change write() to support indent
-
-    public JsonPrettyGeneratorImpl(final Writer writer, final ConcurrentMap<String, String> cache) {
-        this(writer, null, false, "", cache);
-    }
-
-    public JsonPrettyGeneratorImpl(final Writer writer, final JsonPrettyGeneratorImpl parent,
-                                   final boolean array, final String prefix,
+    JsonPrettyGeneratorImpl(final Writer writer, final String prefix,
                                    final ConcurrentMap<String, String> cache) {
-        super(writer, parent, array, cache);
+        super(writer, cache);
         this.indent = prefix;
     }
-
-    private void addCommaIfNeeded() {
+    
+    JsonPrettyGeneratorImpl(final Writer writer, 
+            final ConcurrentMap<String, String> cache) {
+    this(writer, DEFAULT_INDENTATION, cache);
+    
+    }
+    
+    
+    @Override
+    protected void addCommaIfNeeded() {
         if (needComma) {
-            try {
-                writer.write(',');
-                ln();
-            } catch (final IOException e) {
-                throw new JsonGenerationException(e.getMessage(), e);
-            }
+            justWrite(COMMA_CHAR);
+            justWrite(EOL);
             needComma = false;
         }
     }
 
-    private void ln() {
+
+    private void writeEOL() {
+        
         try {
-            writer.write('\n');
-        } catch (final IOException e) {
-            throw new JsonGenerationException(e.getMessage(), e);
+            writer.write(EOL);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+    }
+    
+    private void writeIndent() {
+        
+       
+        
+        System.out.println("Indent "+depth);
+        
+        for(int i=0; i< depth;i++) {
+            try {
+                writer.write(indent);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
     }
 
-    private String nextIndent() {
-        return indent != null ? indent + DEFAULT_INDENTATION : null;
+    @Override
+    protected void justWrite(String value) {
+        // TODO Auto-generated method stub
+        writeIndent();
+        super.justWrite(value);
+        writeEOL();
     }
 
     @Override
-    protected JsonGenerator newJsonGenerator(final Writer writer, final JsonPrettyGeneratorImpl parent, final boolean array) {
-        return new JsonPrettyGeneratorImpl(writer, parent, array, nextIndent(), cache);
+    protected void justWrite(char value) {
+        // TODO Auto-generated method stub
+        writeIndent();
+        super.justWrite(value);
+        writeEOL();
+    }
+
+    
+    
+    
+    /*
+    
+
+    @Override
+    public JsonGenerator write(String name, JsonValue value) {
+        writeIndent();
+        super.write(name, value);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(String name, String value) {
+        writeIndent();
+        super.write(name, value);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(String name, BigInteger value) {
+        writeIndent();
+        super.write(name, value);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(String name, BigDecimal value) {
+        writeIndent();
+        super.write(name, value);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(String name, int value) {
+        writeIndent();
+        super.write(name, value);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(String name, long value) {
+        writeIndent();
+        super.write(name, value);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(String name, double value) {
+        writeIndent();
+        super.write(name, value);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(String name, boolean value) {
+        writeIndent();
+        super.write(name, value);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator writeNull(String name) {
+        writeIndent();
+        super.writeNull(name);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(JsonValue value) {
+        writeIndent();
+        super.write(value);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(String value) {
+        writeIndent();
+        super.write(value);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(BigDecimal value) {
+        writeIndent();
+        super.write(value);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(BigInteger value) {
+        writeIndent();
+        super.write(value);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(int value) {
+        writeIndent();
+        super.write(value);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(long value) {
+        writeIndent();
+        super.write(value);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(double value) {
+        writeIndent();
+        super.write(value);
+        writeEOL();
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(boolean value) {
+        writeIndent();
+        super.write(value);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator writeNull() {
+        writeIndent();
+        super.writeNull();
+        return this;
     }
 
     @Override
     public JsonGenerator writeStartObject() {
-        final JsonGenerator generator = super.writeStartObject();
-        ln();
-        return generator;
+        writeIndent();
+        super.writeStartObject();
+        writeEOL();
+        return this;
     }
 
     @Override
     public JsonGenerator writeStartObject(final String name) {
-        final JsonGenerator generator = super.writeStartObject(name);
-        ln();
-        return generator;
+        //writeIndent();
+        super.writeStartObject(name);
+        return this;
     }
 
     @Override
     public JsonGenerator writeStartArray() {
-        final JsonGenerator generator = super.writeStartArray();
-        ln();
-        return generator;
+        //writeIndent();
+        super.writeStartArray();
+        writeEOL();
+        return this;
     }
 
     @Override
     public JsonGenerator writeStartArray(final String name) {
-        final JsonGenerator generator = super.writeStartArray(name);
-        ln();
-        return generator;
+        //writeIndent();
+        super.writeStartArray(name);
+        return this;
     }
 
     @Override
     public JsonGenerator writeEnd() {
-        ln();
-        needComma = false;
-        final String thisIndent = indent;
-        indent = parent != null ? parent.indent : indent;
-        noCheckWriteAndForceComma(array ? "]" : "}");
-        indent = thisIndent;
-        return parent != null ? parent : this;
-    }
-
-    @Override
-    protected JsonGenerator noCheckWriteAndForceComma(final String value) {
-        addCommaIfNeeded();
-        try {
-            if (indent != null) {
-                writer.write(indent);
-            }
-            writer.write(value);
-        } catch (final IOException e) {
-            throw new JsonGenerationException(e.getMessage(), e);
-        }
-        needComma = true;
+        writeEOL();
+        super.writeEnd();      
         return this;
     }
+*/
 }

@@ -18,6 +18,8 @@
  */
 package org.apache.fleece.core;
 
+import java.math.BigDecimal;
+
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
@@ -26,17 +28,15 @@ import javax.json.JsonValue;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
 
-import java.math.BigDecimal;
-
-public class JsonReaderImpl implements JsonReader {
+class JsonReaderImpl implements JsonReader {
     private final EscapedStringAwareJsonParser parser;
     private final JsonReaderListenerFactory listenerFactory;
     
-    public JsonReaderImpl(final EscapedStringAwareJsonParser parser) {
+    JsonReaderImpl(final EscapedStringAwareJsonParser parser) {
         this(parser, new JsonListenerFactory());
     }
 
-    public JsonReaderImpl(final EscapedStringAwareJsonParser parser, final JsonReaderListenerFactory listenerFactory) {
+    JsonReaderImpl(final EscapedStringAwareJsonParser parser, final JsonReaderListenerFactory listenerFactory) {
         this.parser = parser;
         this.listenerFactory = listenerFactory;
     }
@@ -51,14 +51,14 @@ public class JsonReaderImpl implements JsonReader {
                 final JsonReaderListener subObject = listenerFactory.subObject();
                 parseObject(subObject);
                 if (parser.hasNext()) {
-                    throw new JsonParsingException("Garbage", new JsonLocationImpl(1, 1, 0));
+                    throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 return JsonObject.class.cast(subObject.getObject());
             case START_ARRAY:
                 final JsonReaderListener subArray = listenerFactory.subArray();
                 parseArray(subArray);
                 if (parser.hasNext()) {
-                    throw new JsonParsingException("Garbage", new JsonLocationImpl(1, 1, 0));
+                    throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 return JsonArray.class.cast(subArray.getObject());
             default:

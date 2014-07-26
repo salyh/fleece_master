@@ -193,4 +193,48 @@ public class LocationTest {
          
        
     }
+    
+    
+    
+    @Test
+    public void testLocationOnParsingException() {
+        //line number, column, offset (measured in chars)
+        //line number and column start at 1
+        //offset start at 0
+        assertJsonLocation("a", new JsonLocationImpl(1, 2, 1));
+        assertJsonLocation("aa", new JsonLocationImpl(1, 2, 1));
+        assertJsonLocation("asa", new JsonLocationImpl(1, 2, 1));
+        assertJsonLocation("{]", new JsonLocationImpl(1, 3, 2));
+        assertJsonLocation("[}", new JsonLocationImpl(1, 3, 2));
+        assertJsonLocation("[a", new JsonLocationImpl(1, 3, 2));
+        assertJsonLocation("[nuLl]", new JsonLocationImpl(1, 5, 4));
+        assertJsonLocation("[falsE]", new JsonLocationImpl(1, 7, 6));
+        assertJsonLocation("[][]", new JsonLocationImpl(1, 4, 3));
+        assertJsonLocation("[1234L]", new JsonLocationImpl(1, 7, 6));
+        assertJsonLocation("[null\n}", new JsonLocationImpl(2, 2, 7));
+        assertJsonLocation("[null\r\n}", new JsonLocationImpl(2, 2, 8));
+        assertJsonLocation("[null\n, null\n}", new JsonLocationImpl(3, 2, 14));
+        assertJsonLocation("[null\r\n, null\r\n}", new JsonLocationImpl(3, 2, 16));
+    }
+
+
+    private void assertJsonLocation(String jsonString, JsonLocation expectedLocation) {
+        JsonParser parser = Json.createParser(new StringReader(jsonString));
+        try {
+            while(parser.hasNext()) {
+                parser.next();
+            }
+            Assert.fail("Expected to throw JsonParsingException for "+jsonString);
+        } catch(JsonParsingException je) {
+            // Expected
+            if (expectedLocation != null) {
+                JsonLocation loc = je.getLocation();
+                assertEquals(expectedLocation.getLineNumber(), loc.getLineNumber());
+                assertEquals(expectedLocation.getColumnNumber(), loc.getColumnNumber());
+                assertEquals(expectedLocation.getStreamOffset(), loc.getStreamOffset());
+            }
+        } finally {
+            parser.close();
+        }
+    }
 }
