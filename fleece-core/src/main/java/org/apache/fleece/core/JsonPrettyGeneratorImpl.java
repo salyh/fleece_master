@@ -37,35 +37,21 @@ final class JsonPrettyGeneratorImpl extends JsonGeneratorImpl {
 
     }
 
-    /* @Override
-     protected void addCommaIfNeeded() {
-         if (needComma) {
-             super.justWrite(COMMA_CHAR);
-             super.justWrite(EOL);
-             needComma = false;
-         }
-     }*/
-
     private void writeEOL() {
         justWrite(EOL);
     }
 
-    private void writeIndent() {
-        for (int i = 0; i < depth; i++) {
+    private void writeIndent(int correctionOffset) {
+        for (int i = 0; i < depth + correctionOffset; i++) {
             justWrite(indent);
         }
     }
-    
-    private void writeIndentMinOne() {
-        for (int i = 0; i < depth-1; i++) {
-            justWrite(indent);
-        }
-    }
+
     
     @Override
     protected JsonGenerator writeEnd(final char value) {
         writeEOL();
-        writeIndentMinOne();
+        writeIndent(-1);
         return super.writeEnd(value);
     }
 
@@ -75,19 +61,22 @@ final class JsonPrettyGeneratorImpl extends JsonGeneratorImpl {
         
         if(depth>0){
             writeEOL();
-            writeIndent();
-        }else
-        {
-            
+            writeIndent(0);
         }
-        
         
         justWrite(value);
     }
 
     @Override
     protected void noCheckWrite(final char value) {
-       noCheckWrite(String.valueOf(value));
+        addCommaIfNeeded();
+        
+        if(depth>0){
+            writeEOL();
+            writeIndent(0);
+        }
+        
+        justWrite(value);
     }
 
 }

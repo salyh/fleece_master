@@ -34,12 +34,14 @@ import javax.json.stream.JsonGenerator;
 class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     private static final String NULL_KEY = NULL+KEY_SEPARATOR;
 
-    protected final Writer writer;
+    private final Writer writer;
+    private final char[] buffer = new char[8192]; 
+    private int bufferPos = 0;
     private final ConcurrentMap<String, String> cache;
-    boolean needComma = false;
+    private boolean needComma = false;
     
     private StructureElement currentStructureElement = null;
-    protected boolean valid = false;
+    private boolean valid = false;
     protected int depth = 0;
 
     //minimal stack implementation
@@ -62,14 +64,12 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     }
    
 
-    protected boolean addCommaIfNeeded() {
+    protected void addCommaIfNeeded() {
         if (needComma) {
             justWrite(COMMA_CHAR);
             needComma = false;
-            return true;
         }
         
-        return false;
     }
 
     // we cache key only since they are generally fixed
@@ -259,7 +259,6 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
             throw new JsonGenerationException("Method must not be called in no context");
         }  
         
-        //needComma = false;
         writeEnd(currentStructureElement.isArray ? END_ARRAY_CHAR : END_OBJECT_CHAR);
         
         //pop from stack
@@ -344,20 +343,30 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public void close() {
-        
-        if(currentStructureElement != null || !valid) {
-            throw new JsonGenerationException("Invalid json "+currentStructureElement+" "+valid);
-        }
-        
+
         try {
-            writer.close();
-        } catch (final IOException e) {
-            throw new JsonException(e.getMessage(), e);
+            if (currentStructureElement != null || !valid) {
+
+                throw new JsonGenerationException("Invalid json " + currentStructureElement + " " + valid);
+            }
+        } finally {
+
+            //buffer.close() TODO
+            flushBuffer();
+
+            try {
+                writer.close();
+            } catch (final IOException e) {
+                throw new JsonException(e.getMessage(), e);
+            }
         }
     }
 
     @Override
     public void flush() {
+        
+        flushBuffer();
+        
         try {
             writer.flush();
         } catch (final IOException e) {
@@ -365,23 +374,18 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         }
     }
 
-    protected JsonGenerator noCheckWriteAndForceComma(final String value) {
+    private JsonGenerator noCheckWriteAndForceComma(final String value) {
         noCheckWrite(value);
         needComma = true;
         return this;
     }
     
-    protected JsonGenerator writeEnd(final char value) {
+    protected  JsonGenerator writeEnd(final char value) {
         justWrite(value);
         needComma = true;
         return this;
     }
     
-    protected JsonGenerator noCheckWriteAndForceComma(final char value) {
-        noCheckWrite(value);
-        needComma = true;
-        return this;
-    }
 
     protected void noCheckWrite(String value) {
         addCommaIfNeeded();
@@ -393,20 +397,87 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         justWrite(value);
     }
 
-    protected void justWrite(final String value) {
+    private void flushBuffer()
+    {
+        //System.out.println("flush "+bufferPos+"   "+new String(buffer,0,bufferPos));
+        
         try {
-            writer.write(value);
+            writer.write(buffer,0, bufferPos);
+            bufferPos=0;
         } catch (final IOException e) {
             throw new JsonException(e.getMessage(), e);
         }
     }
     
-    protected void justWrite(final char value) {
-        try {
-            writer.write(value);
-        } catch (final IOException e) {
-            throw new JsonException(e.getMessage(), e);
+    protected  void justWrite(final String value) {
+        final int valueLength = value.length();
+        
+        //System.out.println("enter");
+        
+        if (bufferPos+valueLength >= buffer.length) {
+            
+            int start=0;
+            int len=buffer.length-bufferPos;
+            
+            while(true){
+                
+                
+                int end = start+len;
+                if(end > valueLength) {
+                    end=valueLength;
+                }
+                
+                //System.out.println(start+" "+(end)+" ("+(end-start)+") "+bufferPos+" "+valueLength+ " "+value);
+                
+                value.getChars(start, end, buffer, bufferPos);
+                //System.out.println("write "+value.substring(start,end));
+                               
+                bufferPos+=(end-start);
+                start+=(len);
+                //System.out.println(start+" "+bufferPos);
+                
+                if(start >= valueLength) {
+                    //System.out.println("ret");
+                    return;
+                }
+
+                if (bufferPos >= buffer.length) {
+                    flushBuffer();
+                    len=buffer.length;
+                }
+                
+               
+                
+                
+            }
+            
+            
+            
+        }else {
+            //fits completely into the buffer
+            //System.out.println("FIT");
+            value.getChars(0, valueLength, buffer, bufferPos);
+            bufferPos+=valueLength;
         }
+            
+        
+        
+        
+
+    }
+    
+    protected void justWrite(final char value) {
+        
+        if (bufferPos >= buffer.length) {
+            flushBuffer();
+        }
+        
+      
+        
+        buffer[bufferPos++] = value;
+        
+        //System.out.println("one char "+(bufferPos-1)+" "+value);
+
     }
 
     private void checkObject() {

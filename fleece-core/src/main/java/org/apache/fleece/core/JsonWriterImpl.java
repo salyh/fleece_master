@@ -57,9 +57,11 @@ class JsonWriterImpl implements JsonWriter, Serializable{
 
     @Override
     public void close() {
-        closed = true;
-        generator.close();
         
+        if(!closed) {
+            closed = true;
+            generator.close();
+        }
     }
     
     private void checkClosed() {
