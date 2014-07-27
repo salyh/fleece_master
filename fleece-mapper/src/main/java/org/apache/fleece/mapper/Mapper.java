@@ -18,10 +18,10 @@
  */
 package org.apache.fleece.mapper;
 
-import org.apache.fleece.core.JsonObjectImpl;
 import org.apache.fleece.mapper.converter.EnumConverter;
 import org.apache.fleece.mapper.reflection.Mappings;
 
+import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
@@ -63,7 +63,7 @@ import java.util.concurrent.ConcurrentMap;
 import static java.util.Arrays.asList;
 
 public class Mapper {
-    protected static final JsonObjectImpl EMPTY_OBJECT = new JsonObjectImpl();
+    protected static final JsonObject EMPTY_OBJECT = Json.createObjectBuilder().build();
     private static final Converter<Object> FALLBACK_CONVERTER = new FallbackConverter();
 
     protected final Mappings mappings;

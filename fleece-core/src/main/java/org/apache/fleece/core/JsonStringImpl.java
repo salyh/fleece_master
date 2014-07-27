@@ -30,6 +30,10 @@ final class JsonStringImpl implements JsonString {
     }
 
     JsonStringImpl(final String value, final String escaped) {
+        if(value == null) {
+            throw new NullPointerException("value must not be null");
+        }
+
         this.value = value;
         
         if(escaped != null) {

@@ -19,9 +19,10 @@
 package org.apache.fleece.core;
 
 import java.io.Serializable;
+import java.util.AbstractMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import javax.json.JsonArray;
 import javax.json.JsonNumber;
@@ -29,16 +30,28 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
-final class JsonObjectImpl extends LinkedHashMap<String, JsonValue> implements JsonObject, Serializable {
+public final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements JsonObject, Serializable {
     private Integer hashCode = null;
+    private final Map<String, JsonValue> unmodifieableBackingMap;
 
     private <T> T value(final String name, final Class<T> clazz) {
-        final Object v = get(name);
+        final Object v = unmodifieableBackingMap.get(name);
         if (v != null) {
             return clazz.cast(v);
         }
         throw new NullPointerException("no mapping for " + name);
     }
+
+    
+    
+    
+    public JsonObjectImpl(Map<String, JsonValue> backingMap) {
+        super();
+        this.unmodifieableBackingMap = backingMap;
+    }
+
+
+
 
     @Override
     public JsonArray getJsonArray(final String name) {
@@ -116,7 +129,7 @@ final class JsonObjectImpl extends LinkedHashMap<String, JsonValue> implements J
     @Override
     public String toString() {
         final StringBuilder builder = new StringBuilder("{");
-        final Iterator<Map.Entry<String, JsonValue>> it = entrySet().iterator();
+        final Iterator<Map.Entry<String, JsonValue>> it = unmodifieableBackingMap.entrySet().iterator();
         boolean hasNext = it.hasNext();
         while (hasNext) {
             final Map.Entry<String, JsonValue> entry = it.next();
@@ -140,46 +153,20 @@ final class JsonObjectImpl extends LinkedHashMap<String, JsonValue> implements J
 
     @Override
     public boolean equals(final Object obj) {
-        return JsonObject.class.isInstance(obj) && super.equals(obj);
+        return JsonObjectImpl.class.isInstance(obj) && unmodifieableBackingMap.equals(JsonObjectImpl.class.cast(obj).unmodifieableBackingMap);
     }
 
-    @Override
-    public void clear() {
-        throw immutable();
-    }
-
-    @Override
-    public JsonValue put(String key, JsonValue value) {
-        throw immutable();
-    }
-
-    @Override
-    public void putAll(Map<? extends String, ? extends JsonValue> jsonObject) {
-        throw immutable();
-    }
-
-    @Override
-    public JsonValue remove(Object key) {
-        throw immutable();
-    }
-
-    private static UnsupportedOperationException immutable() {
-        throw new UnsupportedOperationException("JsonObject is immutable. You can create another one thanks to JsonObjectBuilder");
-    }
-
-    void putInternal(final String name, final JsonValue value) {
-        if(name == null || value == null) {
-            throw new NullPointerException("name and value must not be null");
-        }
-        
-        super.put(name, value);
-    }
 
     @Override
     public int hashCode() {
         if (hashCode == null) {
-            hashCode = super.hashCode();
+            hashCode = unmodifieableBackingMap.hashCode();
         }
         return hashCode;
+    }
+
+    @Override
+    public Set<java.util.Map.Entry<String, JsonValue>> entrySet() {
+        return unmodifieableBackingMap.entrySet();
     }
 }

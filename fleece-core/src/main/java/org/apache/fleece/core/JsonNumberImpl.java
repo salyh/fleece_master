@@ -28,6 +28,10 @@ final class JsonNumberImpl implements JsonNumber {
     private Integer hashCode = null;
 
     JsonNumberImpl(final BigDecimal decimal) {
+        if(decimal == null) {
+            throw new NullPointerException("decimal must not be null");
+        }
+        
         this.value = decimal;
     }
 

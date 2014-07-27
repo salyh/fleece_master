@@ -19,7 +19,6 @@
 package org.apache.fleece.core;
 
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.io.Writer;
 import java.nio.charset.Charset;
@@ -32,8 +31,7 @@ import java.util.concurrent.ConcurrentMap;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 
-public class JsonGeneratorFactoryImpl implements JsonGeneratorFactory, Serializable {
-    private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
+public class JsonGeneratorFactoryImpl implements JsonGeneratorFactory, Serializable {    
     private final Map<String, Object> internalConfig = new HashMap<String, Object>();
     private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
         
@@ -63,24 +61,28 @@ public class JsonGeneratorFactoryImpl implements JsonGeneratorFactory, Serializa
 
     @Override
     public JsonGenerator createGenerator(final Writer writer) {
-        return newJsonGeneratorImpl(writer);
-    }
-
-    private JsonGenerator newJsonGeneratorImpl(final Writer writer) {
         if (pretty) {
             return new JsonPrettyGeneratorImpl(writer, cache);
         }
         return new JsonGeneratorImpl(writer, cache);
     }
 
+   
+
     @Override
     public JsonGenerator createGenerator(final OutputStream out) {
-        return createGenerator(new OutputStreamWriter(out, UTF8_CHARSET));
+        if (pretty) {
+            return new JsonPrettyGeneratorImpl(out, cache);
+        }
+        return new JsonGeneratorImpl(out, cache);
     }
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out, final Charset charset) {
-        return createGenerator(new OutputStreamWriter(out, charset));
+        if (pretty) {
+            return new JsonPrettyGeneratorImpl(out,charset, cache);
+        }
+        return new JsonGeneratorImpl(out,charset, cache);
     }
 
     @Override

@@ -36,11 +36,12 @@ import java.util.NoSuchElementException;
 
 import javax.json.Json;
 import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
 import javax.json.JsonException;
+import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParser.Event;
-import javax.json.stream.JsonParserFactory;
 import javax.json.stream.JsonParsingException;
 
 import org.junit.Test;
@@ -219,15 +220,16 @@ public class JsonParserTest {
 
     @Test
     public void simpleInMemory() {
-        final JsonObjectImpl simple = new JsonObjectImpl();
-        simple.putInternal("a", new JsonStringImpl("b"));
-        simple.putInternal("c", new JsonNumberImpl(new BigDecimal(4)));
-        final JsonArrayImpl array = new JsonArrayImpl();
-        array.addInternal(new JsonNumberImpl(new BigDecimal(1)));
-        array.addInternal(new JsonNumberImpl(new BigDecimal(-2)));
-        simple.putInternal("d", array);
+        final JsonObjectBuilder ob = Json.createObjectBuilder();
+        ob.add("a", new JsonStringImpl("b"));
+        ob.add("c", new JsonNumberImpl(new BigDecimal(4)));
+        JsonArrayBuilder ab = Json.createArrayBuilder();
+        ab.add(new JsonNumberImpl(new BigDecimal(1)));
+        ab.add(new JsonNumberImpl(new BigDecimal(-2)));
+        
+        ob.add("d", ab);
 
-        final JsonParser parser = Json.createParserFactory(Collections.<String, Object>emptyMap()).createParser(simple);
+        final JsonParser parser = Json.createParserFactory(Collections.<String, Object>emptyMap()).createParser(ob.build());
         assertNotNull(parser);
         assertSimple(parser);
     }

@@ -20,16 +20,14 @@ package org.apache.fleece.core;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
 import java.util.Collections;
 
 import javax.json.Json;
+import javax.json.JsonException;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
 import javax.json.JsonStructure;
-import javax.json.stream.JsonParsingException;
 
 public class JanssonSuiteTest {
     
@@ -71,8 +69,8 @@ public class JanssonSuiteTest {
                 
                 
                 try {
-                    CharsetDecoder dec = Charset.forName("UTF-8").newDecoder();
-                    JsonReader reader = readerFactory.createReader(new InputStreamReader(new FileInputStream(file),dec));
+                    //CharsetDecoder dec = Charset.forName("UTF-8").newDecoder();
+                    JsonReader reader = readerFactory.createReader((new FileInputStream(file)));
                     JsonStructure struct = reader.read();
                     
                     if(shouldFail)
@@ -80,7 +78,7 @@ public class JanssonSuiteTest {
                     //else
                         //System.out.println("OK "+file.getAbsolutePath()+" --> "+struct.getValueType());    
                     
-                }catch (JsonParsingException e) {
+                }catch (JsonException  e) {
                     
                     if(!shouldFail)
                         System.out.println("FAIL (positive false) "+file.getAbsolutePath()+" --> "+e.getMessage());

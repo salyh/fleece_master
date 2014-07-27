@@ -19,10 +19,13 @@
 package org.apache.fleece.core;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.concurrent.ConcurrentMap;
 
 import javax.json.JsonException;
@@ -33,6 +36,7 @@ import javax.json.stream.JsonGenerator;
 
 class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     private static final String NULL_KEY = NULL+KEY_SEPARATOR;
+    private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
     private final Writer writer;
     private final char[] buffer = new char[8192]; 
@@ -58,11 +62,18 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     }
 
 
-   JsonGeneratorImpl(final Writer writer, final ConcurrentMap<String, String> cache) {
+   JsonGeneratorImpl(final Writer writer, ConcurrentMap<String, String> cache) {
         this.writer = writer;
         this.cache = cache;
     }
    
+   JsonGeneratorImpl(final OutputStream out, final ConcurrentMap<String, String> cache) {
+       this(new OutputStreamWriter(out, UTF8_CHARSET), cache);
+   }
+   
+   JsonGeneratorImpl(final OutputStream out, Charset encoding, final ConcurrentMap<String, String> cache) {
+       this(new OutputStreamWriter(out, encoding), cache);
+   }
 
     protected void addCommaIfNeeded() {
         if (needComma) {
@@ -397,8 +408,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         justWrite(value);
     }
 
-    private void flushBuffer()
-    {
+    private void flushBuffer() {
         //System.out.println("flush "+bufferPos+"   "+new String(buffer,0,bufferPos));
         
         try {

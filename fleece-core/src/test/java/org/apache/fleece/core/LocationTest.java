@@ -19,17 +19,12 @@
 package org.apache.fleece.core;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.util.HashMap;
 
 import javax.json.Json;
-import javax.json.JsonObject;
 import javax.json.JsonReader;
-import javax.json.JsonWriter;
 import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;

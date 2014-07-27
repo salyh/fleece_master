@@ -18,7 +18,9 @@
  */
 package org.apache.fleece.core;
 
+import java.io.OutputStream;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.concurrent.ConcurrentMap;
 
 import javax.json.stream.JsonGenerator;
@@ -26,15 +28,21 @@ import javax.json.stream.JsonGenerator;
 final class JsonPrettyGeneratorImpl extends JsonGeneratorImpl {
     private static final String DEFAULT_INDENTATION = "  ";
     private final String indent;
+    
 
-    JsonPrettyGeneratorImpl(final Writer writer, final String prefix, final ConcurrentMap<String, String> cache) {
+    public JsonPrettyGeneratorImpl(Writer writer, ConcurrentMap<String, String> cache) {
         super(writer, cache);
-        this.indent = prefix;
+        indent=DEFAULT_INDENTATION;
     }
 
-    JsonPrettyGeneratorImpl(final Writer writer, final ConcurrentMap<String, String> cache) {
-        this(writer, DEFAULT_INDENTATION, cache);
+    public JsonPrettyGeneratorImpl(OutputStream out, Charset encoding, ConcurrentMap<String, String> cache) {
+        super(out, encoding, cache);
+        indent=DEFAULT_INDENTATION;
+    }
 
+    public JsonPrettyGeneratorImpl(OutputStream out, ConcurrentMap<String, String> cache) {
+        super(out, cache);
+        indent=DEFAULT_INDENTATION;
     }
 
     private void writeEOL() {
