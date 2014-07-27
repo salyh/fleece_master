@@ -27,7 +27,9 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
+import javax.json.JsonString;
 import javax.json.JsonValue;
+import javax.json.JsonValue.ValueType;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 
@@ -500,7 +502,9 @@ public class Mapper {
             final Mappings.Setter value = setter.getValue();
             final Method setterMethod = value.setter;
             final Object convertedValue = value.converter == null?
-                    toObject(jsonValue, value.paramType) : value.converter.fromString(jsonValue.toString());
+                    toObject(jsonValue, value.paramType) : jsonValue.getValueType() == ValueType.STRING ?
+                                                            value.converter.fromString(JsonString.class.cast(jsonValue).getString()):
+                                                                value.converter.fromString(jsonValue.toString());
                 
             if (convertedValue != null) {
                 try {
@@ -521,6 +525,8 @@ public class Mapper {
             convertedValue = buildObject(type, JsonObject.class.cast(jsonValue));
         } else if (JsonArray.class.isInstance(jsonValue)) {
             convertedValue = buildArray(type, JsonArray.class.cast(jsonValue));
+        } else if (JsonString.class.isInstance(jsonValue)) {
+            convertedValue = JsonString.class.cast(jsonValue).getString();
         } else if (jsonValue != null && JsonValue.NULL != jsonValue) {
             if (JsonNumber.class.isInstance(jsonValue)) {
                 final JsonNumber number = JsonNumber.class.cast(jsonValue);

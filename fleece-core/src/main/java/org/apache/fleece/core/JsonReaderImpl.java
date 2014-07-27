@@ -18,64 +18,53 @@
  */
 package org.apache.fleece.core;
 
-import java.math.BigDecimal;
-
-import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonStructure;
-import javax.json.JsonValue;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
 
 class JsonReaderImpl implements JsonReader {
     private final EscapedStringAwareJsonParser parser;
-    private final JsonReaderListenerFactory listenerFactory;
     private boolean closed = false;
-    
-    JsonReaderImpl(final EscapedStringAwareJsonParser parser) {
-        this(parser, new JsonListenerFactory());
-    }
 
-    JsonReaderImpl(final EscapedStringAwareJsonParser parser, final JsonReaderListenerFactory listenerFactory) {
+    JsonReaderImpl(final EscapedStringAwareJsonParser parser) {
         this.parser = parser;
-        this.listenerFactory = listenerFactory;
     }
 
     @Override
     public JsonStructure read() {
-        
+
         checkClosed();
-        
+
         if (!parser.hasNext()) {
             throw new IllegalStateException("Nothing to read");
         }
         switch (parser.next()) {
             case START_OBJECT:
-                final JsonReaderListener subObject = listenerFactory.subObject();
-                parseObject(subObject);
+                final JsonObjectBuilder objectBuilder = new JsonObjectBuilderImpl();
+                parseObject(objectBuilder);
                 if (parser.hasNext()) {
                     throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 close();
-                return JsonObject.class.cast(subObject.getObject());
+                return objectBuilder.build();
             case START_ARRAY:
-                final JsonReaderListener subArray = listenerFactory.subArray();
-                parseArray(subArray);
+                final JsonArrayBuilder arrayBuilder = new JsonArrayBuilderImpl();
+                parseArray(arrayBuilder);
                 if (parser.hasNext()) {
                     throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 close();
-                return JsonArray.class.cast(subArray.getObject());
+                return arrayBuilder.build();
             default:
                 close();
                 throw new JsonParsingException("Unknown structure: " + parser.next(), parser.getLocation());
         }
-        
-        
+
     }
 
     @Override
@@ -90,194 +79,57 @@ class JsonReaderImpl implements JsonReader {
 
     @Override
     public void close() {
-        
-        if(!closed) {
+
+        if (!closed) {
             closed = true;
             parser.close();
         }
-        
+
     }
 
-    private static class JsonListenerFactory implements JsonReaderListenerFactory {
-        @Override
-        public JsonReaderListener subObject() {
-            return new JsonObjectListener();
-        }
-
-        @Override
-        public JsonReaderListener subArray() {
-            return new JsonArrayListener();
-        }
-    }
-
-    private static class JsonObjectListener implements JsonReaderListener {
-        private JsonObjectBuilder builder = Json.createObjectBuilder();
-                
-        private String key = null;
-
-        @Override
-        public Object getObject() {
-            return builder.build();
-        }
-
-        @Override
-        public void onKey(final String string) {
-            key = string;
-        }
-
-        @Override
-        public void onValue(final String string, final String escaped) {
-            final JsonStringImpl value = new JsonStringImpl(string, escaped);
-            builder.add(key, value);
-        }
-
-        @Override
-        public void onLong(final long aLong) {
-            final JsonLongImpl value = new JsonLongImpl(aLong);
-            builder.add(key, value);
-        }
-
-        @Override
-        public void onBigDecimal(final BigDecimal bigDecimal) {
-            final JsonNumberImpl value = new JsonNumberImpl(bigDecimal);
-            builder.add(key, value);
-        }
-
-        @Override
-        public void onNull() {
-            final JsonValue value = JsonValue.NULL;
-            builder.add(key, value);
-        }
-
-        @Override
-        public void onTrue() {
-            final JsonValue value = JsonValue.TRUE;
-            builder.add(key, value);
-        }
-
-        @Override
-        public void onFalse() {
-            final JsonValue value = JsonValue.FALSE;
-            builder.add(key, value);
-        }
-
-        @Override
-        public void onObject(final Object obj) {
-            final JsonObject jsonObject = JsonObject.class.cast(obj);
-            builder.add(key, jsonObject);
-        }
-
-        @Override
-        public void onArray(final Object arr) {
-            final JsonArray jsonArry = JsonArray.class.cast(arr);
-            builder.add(key, jsonArry);
-        }
-    }
-
-    private static class JsonArrayListener implements JsonReaderListener {
-        private JsonArrayBuilder builder = Json.createArrayBuilder();
- 
-        @Override
-        public Object getObject() {
-            return builder.build();
-        }
-
-        @Override
-        public void onKey(final String string) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void onValue(final String string, final String escaped) {
-            final JsonStringImpl value = new JsonStringImpl(string, escaped);
-            builder.add(value);
-        }
-
-        @Override
-        public void onLong(final long aLong) {
-            final JsonLongImpl value = new JsonLongImpl(aLong);
-            builder.add(value);
-        }
-
-        @Override
-        public void onBigDecimal(final BigDecimal bigDecimal) {
-            final JsonNumberImpl value = new JsonNumberImpl(bigDecimal);
-            builder.add(value);
-        }
-
-        @Override
-        public void onNull() {
-            final JsonValue value = JsonValue.NULL;
-            builder.add(value);
-        }
-
-        @Override
-        public void onTrue() {
-            final JsonValue value = JsonValue.TRUE;
-            builder.add(value);
-        }
-
-        @Override
-        public void onFalse() {
-            final JsonValue value = JsonValue.FALSE;
-            builder.add(value);
-        }
-
-        @Override
-        public void onObject(final Object obj) {
-            final JsonObject jsonObject = JsonObject.class.cast(obj);
-            builder.add(jsonObject);
-        }
-
-        @Override
-        public void onArray(final Object arr) {
-            final JsonArray jsonArry = JsonArray.class.cast(arr);
-            builder.add(jsonArry);
-        }
-    }
-
-    private void parseObject(final JsonReaderListener listener) {
+    private void parseObject(final JsonObjectBuilder builder) {
+        String key = null;
         while (parser.hasNext()) {
             final JsonParser.Event next = parser.next();
             switch (next) {
                 case KEY_NAME:
-                    listener.onKey(parser.getString());
+                    key = parser.getString();
                     break;
 
                 case VALUE_STRING:
-                    listener.onValue(parser.getString(), parser.getEscapedString());
+                    builder.add(key, new JsonStringImpl(parser.getString(), parser.getEscapedString()));
                     break;
 
                 case START_OBJECT:
-                    final JsonReaderListener subListenerObject = listenerFactory.subObject();
-                    parseObject(subListenerObject);
-                    listener.onObject(subListenerObject.getObject());
+                    JsonObjectBuilder subObject = null;
+                    parseObject(subObject = new JsonObjectBuilderImpl());
+                    builder.add(key, subObject);
                     break;
 
                 case START_ARRAY:
-                    final JsonReaderListener subListenerArray = listenerFactory.subArray();
-                    parseArray(subListenerArray);
-                    listener.onArray(subListenerArray.getObject());
+                    JsonArrayBuilder subArray = null;
+                    parseArray(subArray = new JsonArrayBuilderImpl());
+                    builder.add(key, subArray);
                     break;
 
                 case VALUE_NUMBER:
                     if (parser.isIntegralNumber()) {
-                        listener.onLong(parser.getLong());
+                        builder.add(key, new JsonLongImpl(parser.getLong()));
                     } else {
-                        listener.onBigDecimal(parser.getBigDecimal());
+                        builder.add(key, new JsonNumberImpl(parser.getBigDecimal()));
                     }
                     break;
 
                 case VALUE_NULL:
-                    listener.onNull();
+                    builder.addNull(key);
                     break;
 
                 case VALUE_TRUE:
-                    listener.onTrue();
+                    builder.add(key, true);
                     break;
 
                 case VALUE_FALSE:
-                    listener.onFalse();
+                    builder.add(key, false);
                     break;
 
                 case END_OBJECT:
@@ -292,47 +144,47 @@ class JsonReaderImpl implements JsonReader {
         }
     }
 
-    private void parseArray(final JsonReaderListener listener) {
+    private void parseArray(final JsonArrayBuilder builder) {
         while (parser.hasNext()) {
             final JsonParser.Event next = parser.next();
             switch (next) {
                 case VALUE_STRING:
-                    listener.onValue(parser.getString(), parser.getEscapedString());
+                    builder.add(new JsonStringImpl(parser.getString(), parser.getEscapedString()));
                     break;
 
                 case VALUE_NUMBER:
                     if (parser.isIntegralNumber()) {
-                        listener.onLong(parser.getLong());
+                        builder.add(new JsonLongImpl(parser.getLong()));
                     } else {
-                        listener.onBigDecimal(parser.getBigDecimal());
+                        builder.add(new JsonNumberImpl(parser.getBigDecimal()));
                     }
                     break;
 
                 case START_OBJECT:
-                    final JsonReaderListener subListenerObject = listenerFactory.subObject();
-                    parseObject(subListenerObject);
-                    listener.onObject(subListenerObject.getObject());
+                    JsonObjectBuilder subObject = null;
+                    parseObject(subObject = new JsonObjectBuilderImpl());
+                    builder.add(subObject);
                     break;
 
                 case START_ARRAY:
-                    final JsonReaderListener subListenerArray = listenerFactory.subArray();
-                    parseArray(subListenerArray);
-                    listener.onArray(subListenerArray.getObject());
+                    JsonArrayBuilder subArray = null;
+                    parseArray(subArray = new JsonArrayBuilderImpl());
+                    builder.add(subArray);
                     break;
 
                 case END_ARRAY:
                     return;
 
                 case VALUE_NULL:
-                    listener.onNull();
+                    builder.addNull();
                     break;
 
                 case VALUE_TRUE:
-                    listener.onTrue();
+                    builder.add(true);
                     break;
 
                 case VALUE_FALSE:
-                    listener.onFalse();
+                    builder.add(false);
                     break;
 
                 case KEY_NAME:
@@ -346,11 +198,11 @@ class JsonReaderImpl implements JsonReader {
             }
         }
     }
-    
+
     private void checkClosed() {
-        if(closed) {
+        if (closed) {
             throw new IllegalStateException("read(), readObject(), readArray() or close() method was already called");
         }
-           
+
     }
 }
