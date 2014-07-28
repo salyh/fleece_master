@@ -26,10 +26,14 @@ import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.CharArrayReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.NoSuchElementException;
@@ -38,6 +42,7 @@ import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonException;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.stream.JsonParser;
@@ -1377,6 +1382,38 @@ public class JsonParserTest {
         
         Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail72.json")).read();
     }
+    
+    
+    @Test
+    public void stringescapeVariousBufferSizesBogus() {
+        
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("\t\"special-\":" + "\"" + "\\\\f\\n\\r\\t\\u6565\uDC00\uD800" + "\",\n");
+        sb.append("\t\"unicode-\\u0000- \":\"\\u5656\uDC00\uD800\"\n");
+        String s = "{"+sb.toString()+"}";
+       
+        for (int i = 1; i < s.length()+100; i++) {
+            final String value = String.valueOf(i);
+
+            final JsonParser parser = Json.createParserFactory(new HashMap<String, Object>() {
+                {
+                    put("org.apache.fleece.default-char-buffer", value);
+                }
+            }).createParser(new ByteArrayInputStream(s.getBytes()));
+            assertNotNull(parser);
+            
+            while(parser.hasNext()) {
+                Event e = parser.next();
+                if(e==null) fail();
+            }
+            
+            assertTrue(!parser.hasNext());
+            parser.close();
+            
+        }
+    }
+    
     
     
 }

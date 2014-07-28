@@ -36,7 +36,7 @@ class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
     public static final String BUFFER_STRATEGY = "org.apache.fleece.buffer-strategy";
     public static final String MAX_STRING_LENGTH = "org.apache.fleece.max-string-length";
     public static final String BUFFER_LENGTH = "org.apache.fleece.default-char-buffer";
-    public static final int DEFAULT_MAX_SIZE = Integer.getInteger(MAX_STRING_LENGTH, 8192*32);
+    public static final int DEFAULT_MAX_SIZE = Integer.getInteger(MAX_STRING_LENGTH, 8192*32); //TODO check default string length/buffer size
 
     private final Map<String, Object> internalConfig = new HashMap<String, Object>();
     private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
