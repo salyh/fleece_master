@@ -18,31 +18,33 @@
  */
 package org.apache.fleece.core;
 
-import javax.json.JsonArray;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-import javax.json.stream.JsonLocation;
 import java.math.BigDecimal;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import javax.json.JsonArray;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+import javax.json.stream.JsonLocation;
+import javax.json.stream.JsonParser;
+
 // we don't use visitor pattern to ensure we work with other impl of JsonObject and JsonArray
-public class JsonInMemoryParser implements EscapedStringAwareJsonParser {
+class JsonInMemoryParser implements JsonParser {
     private final Iterator<Entry> iterator;
 
     private Entry next = null;
 
-    public JsonInMemoryParser(final JsonObject object) {
+    JsonInMemoryParser(final JsonObject object) {
         final List<Entry> events = new LinkedList<Entry>();
         generateObjectEvents(events, object);
         iterator = events.iterator();
     }
 
-    public JsonInMemoryParser(final JsonArray array) {
+    JsonInMemoryParser(final JsonArray array) {
         final List<Entry> events = new LinkedList<Entry>();
         generateArrayEvents(events, array);
         iterator = events.iterator();
@@ -51,7 +53,7 @@ public class JsonInMemoryParser implements EscapedStringAwareJsonParser {
     private static void generateObjectEvents(final List<Entry> events, final JsonObject object) {
         events.add(new Entry(Event.START_OBJECT, object));
         for (final Map.Entry<String, JsonValue> entry : object.entrySet()) {
-            events.add(new Entry(Event.KEY_NAME, new JsonStringImpl(entry.getKey())));
+            events.add(new Entry(Event.KEY_NAME, new JsonStringImpl(entry.getKey()))); //TODO check perf
             final JsonValue value = entry.getValue();
             addValueEvents(events, value);
         }
@@ -102,7 +104,7 @@ public class JsonInMemoryParser implements EscapedStringAwareJsonParser {
         if (JsonObject.class.isInstance(next.value) || JsonArray.class.isInstance(next.value)) {
             throw new IllegalStateException("String is for numbers and strings");
         }
-        return getEscapedString();
+        return JsonString.class.cast(next.value).getString();
     }
 
     @Override
@@ -139,12 +141,7 @@ public class JsonInMemoryParser implements EscapedStringAwareJsonParser {
 
     @Override
     public JsonLocation getLocation() { // no location for in memory parsers
-        return new JsonLocationImpl(-1, -1, -1);
-    }
-
-    @Override
-    public String getEscapedString() {
-        return JsonValue.class.cast(next.value).toString();
+        return JsonLocationImpl.UNKNOW_LOCATION;
     }
 
     @Override
