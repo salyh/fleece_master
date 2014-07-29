@@ -41,16 +41,11 @@ public final class JsonObjectImpl extends AbstractMap<String, JsonValue> impleme
         }
         throw new NullPointerException("no mapping for " + name);
     }
-
-    
-    
-    
+   
     public JsonObjectImpl(Map<String, JsonValue> backingMap) {
         super();
         this.unmodifieableBackingMap = backingMap;
     }
-
-
 
 
     @Override

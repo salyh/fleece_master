@@ -44,8 +44,7 @@ class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
         BUFFER_STRATEGY, MAX_STRING_LENGTH, BUFFER_LENGTH
         
     };
-    
-    
+      
     private final int maxSize;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
     private final BufferStrategy.BufferProvider<char[]> valueBufferProvider;

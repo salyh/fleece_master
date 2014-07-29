@@ -151,10 +151,6 @@ class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serial
         return JsonArrayImpl.class.isInstance(obj) && unmodifieableBackingList.equals(JsonArrayImpl.class.cast(obj).unmodifieableBackingList);
     }
 
-
-    /*void addInternal(final JsonValue value) {
-        unmodifieableBackingList.add(value);
-    }*/
     
     @Override
     public int hashCode() {
