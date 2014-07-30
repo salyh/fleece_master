@@ -51,41 +51,51 @@ class JsonInMemoryParser implements JsonParser {
     }
 
     private static void generateObjectEvents(final List<Entry> events, final JsonObject object) {
-        events.add(new Entry(Event.START_OBJECT, object));
+        events.add(new Entry(Event.START_OBJECT, null));
         for (final Map.Entry<String, JsonValue> entry : object.entrySet()) {
-            events.add(new Entry(Event.KEY_NAME, new JsonStringImpl(entry.getKey()))); //TODO check perf
+            events.add(new Entry(Event.KEY_NAME, new JsonStringImpl(entry.getKey())));
             final JsonValue value = entry.getValue();
             addValueEvents(events, value);
         }
-        events.add(new Entry(Event.END_OBJECT, object));
+        events.add(new Entry(Event.END_OBJECT, null));
     }
 
     private static void generateArrayEvents(final List<Entry> events, final JsonArray array) {
-        events.add(new Entry(Event.START_ARRAY, array));
+        events.add(new Entry(Event.START_ARRAY, null));
         for (final JsonValue value : array) {
             addValueEvents(events, value);
         }
-        events.add(new Entry(Event.END_ARRAY, array));
+        events.add(new Entry(Event.END_ARRAY, null));
     }
 
     private static void addValueEvents(final List<Entry> events, final JsonValue value) {
-        if (JsonArray.class.isInstance(value)) {
-            generateArrayEvents(events, JsonArray.class.cast(value));
-        } else if (JsonObject.class.isInstance(value)) {
-            generateObjectEvents(events, JsonObject.class.cast(value));
-        } else if (JsonString.class.isInstance(value)) {
-            events.add(new Entry(Event.VALUE_STRING, JsonValue.class.cast(value)));
-        } else if (JsonNumber.class.isInstance(value)) {
-            events.add(new Entry(Event.VALUE_NUMBER, JsonValue.class.cast(value)));
-        } else if (value == JsonValue.TRUE) {
-            events.add(new Entry(Event.VALUE_TRUE, value));
-        } else if (value == JsonValue.FALSE) {
-            events.add(new Entry(Event.VALUE_FALSE, value));
-        } else if (value == JsonValue.NULL) {
-            events.add(new Entry(Event.VALUE_NULL, value));
-        } else {
-            throw new IllegalArgumentException(value + " not supported");
+        
+        switch(value.getValueType()) {
+            case ARRAY:
+                generateArrayEvents(events, JsonArray.class.cast(value));
+                break;
+            case OBJECT:
+                generateObjectEvents(events, JsonObject.class.cast(value));
+                break;
+            case NUMBER:
+                events.add(new Entry(Event.VALUE_NUMBER, value));
+                break;
+            case STRING:
+                events.add(new Entry(Event.VALUE_STRING, value));
+                break;
+            case FALSE:
+                events.add(new Entry(Event.VALUE_FALSE, null));
+                break;
+            case NULL:
+                events.add(new Entry(Event.VALUE_NULL, null));
+                break;
+            case TRUE:
+                events.add(new Entry(Event.VALUE_TRUE, null));
+                break;
+            default: throw new IllegalArgumentException(value + " not supported");
+                
         }
+        
     }
 
     @Override
@@ -101,7 +111,7 @@ class JsonInMemoryParser implements JsonParser {
 
     @Override
     public String getString() {
-        if (JsonObject.class.isInstance(next.value) || JsonArray.class.isInstance(next.value)) {
+        if (next.event != Event.KEY_NAME && next.event != Event.VALUE_STRING) {
             throw new IllegalStateException("String is for numbers and strings");
         }
         return JsonString.class.cast(next.value).getString();
@@ -109,7 +119,7 @@ class JsonInMemoryParser implements JsonParser {
 
     @Override
     public boolean isIntegralNumber() {
-        if (!JsonNumber.class.isInstance(next.value)) {
+        if (next.event != Event.VALUE_NUMBER) {
             throw new IllegalStateException("isIntegralNumber is for numbers");
         }
         return JsonNumber.class.cast(next.value).isIntegral();
@@ -117,7 +127,7 @@ class JsonInMemoryParser implements JsonParser {
 
     @Override
     public int getInt() {
-        if (!JsonNumber.class.isInstance(next.value)) {
+        if (next.event != Event.VALUE_NUMBER) {
             throw new IllegalStateException("getInt is for numbers");
         }
         return JsonNumber.class.cast(next.value).intValue();
@@ -125,7 +135,7 @@ class JsonInMemoryParser implements JsonParser {
 
     @Override
     public long getLong() {
-        if (!JsonNumber.class.isInstance(next.value)) {
+        if (next.event != Event.VALUE_NUMBER) {
             throw new IllegalStateException("getLong is for numbers");
         }
         return JsonNumber.class.cast(next.value).longValue();
@@ -133,7 +143,7 @@ class JsonInMemoryParser implements JsonParser {
 
     @Override
     public BigDecimal getBigDecimal() {
-        if (!JsonNumber.class.isInstance(next.value)) {
+        if (next.event != Event.VALUE_NUMBER) {
             throw new IllegalStateException("getBigDecimal is for numbers");
         }
         return JsonNumber.class.cast(next.value).bigDecimalValue();
@@ -150,10 +160,10 @@ class JsonInMemoryParser implements JsonParser {
     }
 
     private static class Entry {
-        private final Event event;
-        private final JsonValue value;
+        final Event event;
+        final JsonValue value;
 
-        private Entry(final Event event, final JsonValue value) {
+        Entry(final Event event, final JsonValue value) {
             this.event = event;
             this.value = value;
         }
