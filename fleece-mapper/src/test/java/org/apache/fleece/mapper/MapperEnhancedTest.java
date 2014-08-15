@@ -18,12 +18,14 @@
  */
 package org.apache.fleece.mapper;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -46,7 +48,35 @@ public class MapperEnhancedTest {
         new MapperBuilder().build().writeObject(null, sw);
         assertEquals("{}", sw.toString());
     }
+    
+    @Test
+    public void writeReadNullSortedSet() {
+        SoseClass soseClass = new SoseClass();
+        soseClass.setSose(null);
+        final StringWriter sw = new StringWriter();
+        
+        new MapperBuilder().build().writeObject(soseClass, sw);
+       
+        assertEquals("{\"sose\":null}", sw.toString());
+        SoseClass read = new MapperBuilder().build().readObject(new StringReader(sw.toString()), SoseClass.class);
+        Assert.assertNotNull(read);
+        Assert.assertNull(read.getSose());
+    }
    
+    @Test
+    public void writeReadChar() {
+        CharClass charClass = new CharClass();
+        charClass.setCharValue('G');
+        charClass.setCharArr(new char[]{'G','O'});
+        final StringWriter sw = new StringWriter();
+        
+        new MapperBuilder().build().writeObject(charClass, sw);
+        assertEquals("{\"charArr\":[\"G\",\"O\"],\"charValue\":\"G\"}", sw.toString());
+        CharClass  read = new MapperBuilder().build().readObject(new StringReader(sw.toString()), CharClass.class);
+        Assert.assertNotNull(read);
+        Assert.assertEquals('G', read.getCharValue());
+        Assert.assertTrue(Arrays.equals(new char[]{'G','O'}, read.getCharArr()));
+    }
     
     @Test
     public void writeReadSortedMap() {
@@ -102,6 +132,7 @@ public class MapperEnhancedTest {
                 "\"bd\":-456.4567890987654321," +
                 "\"string\":\"some \\t \\u0001 unicode: ÖÄÜ pppন􏿿\"," +
                 "\"dates\":[]," +
+                "\"inner\":null," +
                 "\"sose\":[\"string1\",\"string2\"]," +
                 "\"map\":{\"[{key1=-100, key11=-1002, key2=100, key22=1002}, {}]\":100}" +
             "}," +
@@ -197,6 +228,27 @@ public class MapperEnhancedTest {
         public void setSoma(SortedMap<String, String> soma) {
             this.soma = soma;
         }        
+    }
+    
+    public static class CharClass {
+        private char charValue;
+        private char charArr[];
+        
+        public char[] getCharArr() {
+            return charArr;
+        }
+
+        public void setCharArr(char[] charArr) {
+            this.charArr = charArr;
+        }
+
+        public char getCharValue() {
+            return charValue;
+        }
+
+        public void setCharValue(char charValue) {
+            this.charValue = charValue;
+        }           
     }
     
     public static class TestClass {
