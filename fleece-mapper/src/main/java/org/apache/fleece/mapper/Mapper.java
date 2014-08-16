@@ -118,9 +118,7 @@ public class Mapper {
     }
 
     private static JsonGenerator writePrimitives(final JsonGenerator generator, final String key, final Class<?> type, final Object value) {
-        if(type==null){
-            return generator.writeNull(key);
-        } else if (type == String.class) {
+        if (type == String.class) {
             return generator.write(key, value.toString());
         } else if (type == long.class || type == Long.class) {
             return generator.write(key, Long.class.cast(value).longValue());
@@ -301,11 +299,11 @@ public class Mapper {
         for (final Map.Entry<String, Mappings.Getter> getterEntry : classMapping.getters.entrySet()) {
             final Mappings.Getter getter = getterEntry.getValue();
             final Object value = getter.setter.invoke(object);
-            if ((getter.version >= 0 && version >= getter.version)) {
+            if (value == null || (getter.version >= 0 && version >= getter.version)) {
                 continue;
             }
 
-            generator = writeValue(generator, value==null?null: value.getClass(),
+            generator = writeValue(generator, value.getClass(),
                                     getter.primitive, getter.array,
                                     getter.collection, getter.map,
                                     getterEntry.getKey(),
@@ -340,32 +338,26 @@ public class Mapper {
                                      final boolean primitive, final boolean array,
                                      final boolean collection, final boolean map,
                                      final String key, final Object value) throws InvocationTargetException, IllegalAccessException {
-        if (array && type != null) {
+        if (array) {
             JsonGenerator gen = generator.writeStartArray(key);
             final int length = Array.getLength(value);
             for (int i = 0; i < length; i++) {
                 gen = writeItem(gen, Array.get(value, i));
             }
             return gen.writeEnd();
-        } else if (collection && type != null) {
+        } else if (collection) {
             JsonGenerator gen = generator.writeStartArray(key);
             for (final Object o : Collection.class.cast(value)) {
                 gen = writeItem(gen, o);
             }
             return gen.writeEnd();
-        } else if (map && type != null) {
+        } else if (map) {
             JsonGenerator gen = generator.writeStartObject(key);
             gen = writeMapBody((Map<?, ?>) value, gen);
             return gen.writeEnd();
         } else if (primitive) {
             return writePrimitives(generator, key, type, value);
         } else {
-            
-            if(type==null){
-                return generator.writeNull(key);
-            }
-            
-            
             final Converter<?> converter = findConverter(type);
             if (converter != null) {
                 return writeValue(generator, type, true, false, false, false, key,
@@ -522,7 +514,7 @@ public class Mapper {
                                                             value.converter.fromString(JsonString.class.cast(jsonValue).getString()):
                                                                 value.converter.fromString(jsonValue.toString());
                 
-            if(!(convertedValue == null && value.primitive)) {  
+            if (convertedValue != null) {
                 try {
                     setterMethod.invoke(t, convertedValue);
                 } catch (final InvocationTargetException e) {

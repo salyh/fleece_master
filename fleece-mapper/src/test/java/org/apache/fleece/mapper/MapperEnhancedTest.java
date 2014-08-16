@@ -50,20 +50,6 @@ public class MapperEnhancedTest {
     }
     
     @Test
-    public void writeReadNullSortedSet() {
-        SoseClass soseClass = new SoseClass();
-        soseClass.setSose(null);
-        final StringWriter sw = new StringWriter();
-        
-        new MapperBuilder().build().writeObject(soseClass, sw);
-       
-        assertEquals("{\"sose\":null}", sw.toString());
-        SoseClass read = new MapperBuilder().build().readObject(new StringReader(sw.toString()), SoseClass.class);
-        Assert.assertNotNull(read);
-        Assert.assertNull(read.getSose());
-    }
-   
-    @Test
     public void writeReadChar() {
         CharClass charClass = new CharClass();
         charClass.setCharValue('G');
@@ -132,7 +118,6 @@ public class MapperEnhancedTest {
                 "\"bd\":-456.4567890987654321," +
                 "\"string\":\"some \\t \\u0001 unicode: ÖÄÜ pppন􏿿\"," +
                 "\"dates\":[]," +
-                "\"inner\":null," +
                 "\"sose\":[\"string1\",\"string2\"]," +
                 "\"map\":{\"[{key1=-100, key11=-1002, key2=100, key22=1002}, {}]\":100}" +
             "}," +
